@@ -1,5 +1,4 @@
 # Colores Rositas
-PINK        = \033[38;5;205m
 RESET       = \033[0m
 
 NAME        = a_maze_ing
@@ -10,16 +9,15 @@ MAIN        = a_maze_ing.py
 all: banner $(VENV) run
 
 banner:
-	@echo "$(PINK)  🌸  A-MAZE-ING PROJECT (MLX VERSION)  🌸  $(RESET)"
+	@echo "$ A-MAZE-ING PROJECT (MLX VERSION)$(RESET)"
 
 $(VENV):
-	@echo "$(PINK)Creating virtual environment... ✨$(RESET)"
+	@echo "$ Creating virtual environment... ✨$(RESET)"
 	@python3 -m venv $(VENV)
 	@# No instalamos nada por pip porque usaremos los archivos locales de MLX
 
 run:
-	@echo "$(PINK)Running with MiniLibX... 🚀$(RESET)"
-	@$(PYTHON) $(MAIN)
+	@$(PYTHON) $(MAIN) config.txt
 
 clean:
 	@rm -rf __pycache__ $(VENV)
