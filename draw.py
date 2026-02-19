@@ -1,6 +1,8 @@
-import sys
 import os
+import random  # Necesario para la selección de colores
 from mlx import Mlx
+import time
+
 
 class DrawMaze:
     def __init__(self, width, height, grid, config, solution, maze_obj):
@@ -10,26 +12,12 @@ class DrawMaze:
         self.height = height
         self.config = config
         self.solution = solution
-        self.tile_size = 20
+        self.tile_size = 25
         self.show_solution = False
-        self.needs_update = True 
+        self.needs_update = True
 
-        # Lista de colores para los MUROS (rotan con 'C')
-        self.wall_colors = [
-            0xFF1493,
-            0x00FFFF,
-            0xFFFF00,
-            0xFFFFFF,
-            0x8A2BE2,
-            0xFF4500
-        ]
-        self.color_idx = 0
-        self.wall_color = self.wall_colors[self.color_idx]
-        
-        # Colores FIJOS
-        self.solu_color = 0xFFFFFF   # Blanco para el camino
-        self.entry_color = 0x0000FF  # Azul FIJO para la entrada
-        self.exit_color = 0x00FF00   # Verde FIJO para la salida
+        self.anim_duration = 5.0
+        self.anim_start_time = None
 
         self.mlx = Mlx()
         self.mlx_ptr = self.mlx.mlx_init()
@@ -38,19 +26,24 @@ class DrawMaze:
 
         self.win_w = self.width * self.tile_size
         self.win_h = self.height * self.tile_size
-        self.win_ptr = self.mlx.mlx_new_window(self.mlx_ptr, self.win_w, self.win_h, "A-Maze-ing 42")
+        self.win_ptr = self.mlx.mlx_new_window(self.mlx_ptr, self.win_w, self.win_h, "A-Maze-ing 42 - Premium Visualizer")
 
         self.img = self.mlx.mlx_new_image(self.mlx_ptr, self.win_w, self.win_h)
         addr = self.mlx.mlx_get_data_addr(self.img)
         self.img_data, self.bpp, self.line_len, self.endian = addr
 
+        # Color inicial
+        self.wall_color = 0xFF1493 
+        self.solu_color = 0x00FFFF 
+        self.bg_color = 0x000000   
+
     def _put_pixel(self, x, y, color):
         if 0 <= x < self.win_w and 0 <= y < self.win_h:
             offset = (y * self.line_len) + (x * (self.bpp // 8))
-            self.img_data[offset] = color & 0xFF
-            self.img_data[offset + 1] = (color >> 8) & 0xFF
-            self.img_data[offset + 2] = (color >> 16) & 0xFF
-            self.img_data[offset + 3] = 0
+            self.img_data[offset] = color & 0xFF          
+            self.img_data[offset + 1] = (color >> 8) & 0xFF  
+            self.img_data[offset + 2] = (color >> 16) & 0xFF 
+            self.img_data[offset + 3] = 0xFF                 
 
     def _draw_line(self, x1, y1, x2, y2, color):
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
@@ -61,87 +54,223 @@ class DrawMaze:
             for x in range(min(x1, x2), max(x1, x2) + 1):
                 self._put_pixel(x, y1, color)
 
-    def _fill_rect(self, x, y, w, h, color):
-        """Dibuja un cuadrado relleno"""
-        for i in range(x, x + w):
-            for j in range(y, y + h):
-                self._put_pixel(i, j, color)
+    # crear bordes
+    def _draw_border(self, color, thickness=3):
+        # Borde superior
+        for t in range(thickness):
+            self._draw_line(0, t, self.win_w - 1, t, color)
+
+        # Borde inferior
+        for t in range(thickness):
+            self._draw_line(0, self.win_h - 1 - t,
+                            self.win_w - 1, self.win_h - 1 - t, color)
+
+        # Borde izquierdo
+        for t in range(thickness):
+            self._draw_line(t, 0, t, self.win_h - 1, color)
+
+        # Borde derecho
+        for t in range(thickness):
+            self._draw_line(self.win_w - 1 - t, 0,
+                            self.win_w - 1 - t, self.win_h - 1, color)
 
     def draw_path(self):
         if not self.solution:
             self.solution = self.maze_obj.solve()
+
+        # Si aún no se ha iniciado la animación, no dibujamos nada
+        if self.anim_start_time is None:
+            return
+
+        # Tiempo transcurrido desde que empezó la animación
+        elapsed = time.time() - self.anim_start_time
+
+        # Progreso entre 0 y 1
+        t = min(1.0, elapsed / self.anim_duration)
+
+        # Número de pasos a mostrar
+        steps_to_draw = int(len(self.solution) * t)
+
         curr_x, curr_y = self.maze_obj.entry
         half = self.tile_size // 2
-        for move in self.solution:
-            sx, sy = curr_x * self.tile_size + half, curr_y * self.tile_size + half
-            if move == 'N': curr_y -= 1
-            elif move == 'S': curr_y += 1
-            elif move == 'E': curr_x += 1
-            elif move == 'W': curr_x -= 1
-            ex, ey = curr_x * self.tile_size + half, curr_y * self.tile_size + half
+
+        for i in range(steps_to_draw):
+            move = self.solution[i]
+            sx, sy = (
+                curr_x * self.tile_size + half,
+                curr_y * self.tile_size + half
+            )
+
+            if move == 'N':
+                curr_y -= 1
+            elif move == 'S':
+                curr_y += 1
+            elif move == 'E':
+                curr_x += 1
+            elif move == 'W':
+                curr_x -= 1
+
+            ex, ey = (
+                curr_x * self.tile_size + half,
+                curr_y * self.tile_size + half
+            )
+
             self._draw_line(sx, sy, ex, ey, self.solu_color)
 
+        # Mientras la animación no termine, seguir actualizando frames
+        if t < 1.0:
+            self.needs_update = True
+
+    def _fill_tile(self, x, y, color):
+        px, py = x * self.tile_size, y * self.tile_size
+        for dy in range(self.tile_size):
+            for dx in range(self.tile_size):
+                self._put_pixel(px + dx, py + dy, color)
+
+    def change_wall_color(self) -> None:
+        """Cambia los muros a un color aleatorio de la lista."""
+        colors = [
+            0xFF8C00, 0x8A2BE2, 0xFF00FF, 0xFFD700, 0x1E90FF,
+            0xFF69B4, 0x32CD32, 0x4B0082, 0x7FFF00, 0x0000FF
+        ]
+        new_color = random.choice(colors)
+        # Evitar repetir el mismo color consecutivamente
+        while new_color == self.wall_color:
+            new_color = random.choice(colors)
+        self.wall_color = new_color
+        self.needs_update = True
+
     def render(self, *args):
+        # Si no hay cambios, simplemente volvemos a poner la imagen actual en la ventana
         if not self.needs_update:
+            self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
             return 0
         
-        # Limpiar fondo
+        # 1. LIMPIEZA DEL BUFFER (Fondo negro)
         for i in range(len(self.img_data)):
             self.img_data[i] = 0
+        
+        entry_color = 0x00FF00
+        exit_color = 0xFF0000
+        # Pintar entrada
+        ex, ey = self.maze_obj.entry
+        self._fill_tile(ex, ey, entry_color)
 
-        # Dibujar celdas y muros
+        # Pintar salida
+        sx, sy = self.maze_obj.exit_pt
+        self._fill_tile(sx, sy, exit_color)
+
+        # 2. DIBUJO DE CELDAS Y MUROS
         for y in range(self.height):
             for x in range(self.width):
                 px, py = x * self.tile_size, y * self.tile_size
                 
-                # Pintar fondos fijos de Entrada y Salida
-                if (x, y) == self.maze_obj.entry:
-                    self._fill_rect(px, py, self.tile_size, self.tile_size, self.entry_color)
-                elif (x, y) == self.maze_obj.exit_pt:
-                    self._fill_rect(px, py, self.tile_size, self.tile_size, self.exit_color)
+                # --- RELLENO BLANCO PARA EL LOGO 42 ---
+                # Usamos el set 'pattern_cells' definido en el MazeGenerator
+                if (x, y) in self.maze_obj.pattern_cells:
+                    # Rellenamos el cuadrado de la celda de color blanco (0xFFFFFF)
+                    for ry in range(self.tile_size):
+                        for rx in range(self.tile_size):
+                            self._put_pixel(px + rx, py + ry, 0xFFFFFF)
 
-                # Dibujar los muros con el color actual de la rotación
+                # --- DIBUJO DE MUROS ---
+                # Se dibujan después del relleno para que queden por encima
                 val = self.grid[y][x]
-                if val & 1: self._draw_line(px, py, px + self.tile_size, py, self.wall_color)
-                if val & 2: self._draw_line(px + self.tile_size, py, px + self.tile_size, py + self.tile_size, self.wall_color)
-                if val & 4: self._draw_line(px, py + self.tile_size, px + self.tile_size, py + self.tile_size, self.wall_color)
-                if val & 8: self._draw_line(px, py, px, py + self.tile_size, self.wall_color)
+                if val & 1: # Norte
+                    self._draw_line(px, py, px + self.tile_size, py, self.wall_color)
+                if val & 2: # Este
+                    self._draw_line(px + self.tile_size, py, px + self.tile_size, py + self.tile_size, self.wall_color)
+                if val & 4: # Sur
+                    self._draw_line(px, py + self.tile_size, px + self.tile_size, py + self.tile_size, self.wall_color)
+                if val & 8: # Oeste
+                    self._draw_line(px, py, px, py + self.tile_size, self.wall_color)
 
+                # Añadir un borde
+        self._draw_border(0xFFFFFF, thickness=4)
+
+        # 4. SOLUCIÓN
         if self.show_solution:
             self.draw_path()
 
-        self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
-        self.needs_update = False 
+        # 5. VOLCADO FINAL DE LA IMAGEN
+        self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
+        self.mlx.mlx_put_image_to_window(
+            self.mlx_ptr, self.win_ptr, self.img, 0, 0
+        )
+
+        # --- TEXTO AMAZING ---
+        self.mlx.mlx_string_put(
+            self.mlx_ptr, self.win_ptr,
+            10, 2,
+            0xFFFFFF,
+            "AMAZING"
+        )
+
+        # Mantener animación activa
+        if self.show_solution and self.anim_start_time is not None:
+            self.needs_update = True
+        else:
+            self.needs_update = False
+
         return 0
 
     def handle_keys(self, keycode, *args):
-        # ESC
-        if keycode in [53, 65307, 0xFF1B]: 
+        # --- ESC (Cerrar) ---
+        if keycode in [53, 65307, 0xFF1B]:
             os._exit(0)
-        
-        # S (Solución)
-        elif keycode in [1, 115, 83, 31]: 
+
+        # --- S (Solución) ---
+        elif keycode in [1, 115, 83, 31]:
             self.show_solution = not self.show_solution
-            self.needs_update = True
-            
-        # C (Cambiar color de muros - Los puntos de entrada/salida NO cambian)
-        elif keycode in [8, 99, 67, 45]: 
-            self.color_idx = (self.color_idx + 1) % len(self.wall_colors)
-            self.wall_color = self.wall_colors[self.color_idx]
+            if self.show_solution:
+                self.anim_start_time = time.time()   # empieza animación
+            else:
+                self.anim_start_time = None          # la paramos / reseteamos
             self.needs_update = True
 
-        # R (Regenerar)
-        elif keycode in [15, 114, 82, 40]: 
-            self.maze_obj.grid = [[15 for _ in range(self.width)] for _ in range(self.height)]
-            if self.config.get('ALGORITHM') == 'PRIM':
-                self.maze_obj.generate_prim()
+
+        # --- R (Regenerar Laberinto PERFECTO) ---
+                # --- R (Regenerar Laberinto PERFECTO) ---
+        elif keycode in [15, 114, 82, 40]:
+            print("Regenerando laberinto")
+
+            import random
+            from maze_generator import MazeGenerator
+
+            new_seed = random.randint(0, 999999)
+
+            new_maze = MazeGenerator(
+                width=self.width,
+                height=self.height,
+                entry=self.maze_obj.entry,
+                exit_pt=self.maze_obj.exit_pt,
+                output_file=self.maze_obj.output_file,
+                perfect=True,
+                seed=new_seed
+            )
+
+            algo = self.config.get('ALGORITHM', 'DFS').upper()
+            if algo == 'PRIM':
+                new_maze.generate_prim()
             else:
-                self.maze_obj.generate()
-            self.grid = self.maze_obj.grid
+                new_maze.generate()
+
+            self.maze_obj = new_maze
+            self.grid = new_maze.grid
             self.solution = self.maze_obj.solve()
+
+            # IMPORTANTE: resetear estado de solución y animación
             self.show_solution = False
+            self.anim_start_time = None
+
             self.needs_update = True
-            
+
+
+        # --- C (Cambiar Color) ---
+        elif keycode in [8, 99, 67, 14]:
+            print("Changing colors o")
+            self.change_wall_color()
+
         return 0
 
     def run(self):

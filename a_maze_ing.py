@@ -30,11 +30,11 @@ def main():
         s_str = cfg.get('EXIT', f'{w-1},{h-1}').split(',')
         s_coord = (int(s_str[0]), int(s_str[1]))
         out_file = cfg.get('OUTPUT_FILE', 'maze.txt')
-        
+
         # Generación inicial
         maze = MazeGenerator(w, h, e_coord, s_coord, out_file)
         algo = cfg.get('ALGORITHM', 'DFS').upper()
-        
+
         if algo == 'PRIM':
             maze.generate_prim()
         else:
@@ -43,16 +43,11 @@ def main():
         solution_path = maze.solve()
         maze.save()
         print(f"Éxito: Laberinto inicial guardado en {out_file}")
-
-        # Iniciar el visualizador (DrawMaze)
-        # Asegúrate de que draw.py sea el que usa mlx_ptr
         vis = DrawMaze(w, h, maze.grid, cfg, solution_path, maze)
-        
-        # IMPORTANTE: Llamamos a run(), NO accedemos a vis.ptr
+
         vis.run()
 
     except Exception as e:
-        # Esto atrapará el error de 'ptr' si aún queda alguno y nos dirá dónde
         print(f"Error inesperado: {e}")
         os._exit(1)
 
