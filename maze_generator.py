@@ -29,12 +29,12 @@ class MazeGenerator:
         cells = []
         # Definición relativa del número 4
         n_four = [
-            (0,0), (0,1), (0,2), (1,2), (2,2), 
+            (0,0), (0,1), (0,2), (1,2), (2,2),
             (2,0), (2,1), (2,3), (2,4)
         ]
         # Definición relativa del número 2
         n_two = [
-            (0,0), (1,0), (2,0), (2,1), (2,2), 
+            (0,0), (1,0), (2,0), (2,1), (2,2),
             (1,2), (0,2), (0,3), (0,4), (1,4), (2,4)
         ]
         
@@ -67,7 +67,7 @@ class MazeGenerator:
         for px, py in pattern_coords:
             if 0 <= px < self.width and 0 <= py < self.height:
                 visited[py][px] = True
-                self.grid[py][px] = 15 # Bloque sólido
+                self.grid[py][px] = 15  # Bloque sólido
                 self.pattern_cells.add((px, py))
 
         # 2. Algoritmo DFS para garantizar un laberinto perfecto

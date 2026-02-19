@@ -77,31 +77,51 @@ class DrawMaze:
         self.wall_color = new_color
         self.needs_update = True
 
+
     def render(self, *args):
+        # Si no hay cambios, simplemente volvemos a poner la imagen actual en la ventana
         if not self.needs_update:
             self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
             return 0
         
-        # 1. LIMPIEZA
+        # 1. LIMPIEZA DEL BUFFER (Fondo negro)
         for i in range(len(self.img_data)):
             self.img_data[i] = 0
 
-        # 2. DIBUJO DE MUROS
+        # 2. DIBUJO DE CELDAS Y MUROS
         for y in range(self.height):
             for x in range(self.width):
                 px, py = x * self.tile_size, y * self.tile_size
-                val = self.grid[y][x]
-                if val & 1: self._draw_line(px, py, px + self.tile_size, py, self.wall_color)
-                if val & 2: self._draw_line(px + self.tile_size, py, px + self.tile_size, py + self.tile_size, self.wall_color)
-                if val & 4: self._draw_line(px, py + self.tile_size, px + self.tile_size, py + self.tile_size, self.wall_color)
-                if val & 8: self._draw_line(px, py, px, py + self.tile_size, self.wall_color)
+                
+                # --- RELLENO BLANCO PARA EL LOGO 42 ---
+                # Usamos el set 'pattern_cells' definido en el MazeGenerator
+                if (x, y) in self.maze_obj.pattern_cells:
+                    # Rellenamos el cuadrado de la celda de color blanco (0xFFFFFF)
+                    for ry in range(self.tile_size):
+                        for rx in range(self.tile_size):
+                            self._put_pixel(px + rx, py + ry, 0xFFFFFF)
 
+                # --- DIBUJO DE MUROS ---
+                # Se dibujan después del relleno para que queden por encima
+                val = self.grid[y][x]
+                if val & 1: # Norte
+                    self._draw_line(px, py, px + self.tile_size, py, self.wall_color)
+                if val & 2: # Este
+                    self._draw_line(px + self.tile_size, py, px + self.tile_size, py + self.tile_size, self.wall_color)
+                if val & 4: # Sur
+                    self._draw_line(px, py + self.tile_size, px + self.tile_size, py + self.tile_size, self.wall_color)
+                if val & 8: # Oeste
+                    self._draw_line(px, py, px, py + self.tile_size, self.wall_color)
+
+        # 3. DIBUJO DE LA SOLUCIÓN (Si está activa)
         if self.show_solution:
             self.draw_path()
 
-        # 3. VOLCADO FINAL
+        # 4. VOLCADO FINAL A LA VENTANA
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
         self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
+
+        # Marcamos que ya está actualizado
         self.needs_update = False
         return 0
 
@@ -117,7 +137,7 @@ class DrawMaze:
 
         # --- R (Regenerar Laberinto PERFECTO) ---
         elif keycode in [15, 114, 82, 40]:
-            print("Regenerando laberinto manteniendo entrada/salida...")
+            print("Regenerando laberinto")
 
             import random
             from maze_generator import MazeGenerator
@@ -148,6 +168,7 @@ class DrawMaze:
 
         # --- C (Cambiar Color) ---
         elif keycode in [8, 99, 67, 14]:
+            print("Changing colors o")
             self.change_wall_color()
 
         return 0
