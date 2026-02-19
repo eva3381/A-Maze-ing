@@ -106,26 +106,50 @@ class DrawMaze:
         return 0
 
     def handle_keys(self, keycode, *args):
-        # ESC
+        # --- ESC (Cerrar) ---
         if keycode in [53, 65307, 0xFF1B]:
             os._exit(0)
-        # S (Solución)
+
+        # --- S (Solución) ---
         elif keycode in [1, 115, 83, 31]:
             self.show_solution = not self.show_solution
             self.needs_update = True
-        # R (Regenerar)
+
+        # --- R (Regenerar Laberinto PERFECTO) ---
         elif keycode in [15, 114, 82, 40]:
-            self.maze_obj.grid = [[15 for _ in range(self.width)] for _ in range(self.height)]
-            self.maze_obj.generate()
-            self.grid = self.maze_obj.grid
-            self.solution = self.maze_obj.solve()
-            self.show_solution = False
-            self.needs_update = True
-        # C (Cambiar Color) - Keycode 8 para macOS, 99 para Linux/Linux 42
-        elif keycode in [8, 99, 67, 14]:
-            print("Cambiando color de los muros...")
-            self.change_wall_color()
+            print("Regenerando laberinto manteniendo entrada/salida...")
+
+            import random
+            from maze_generator import MazeGenerator
+
+            new_seed = random.randint(0, 999999)
+
+            new_maze = MazeGenerator(
+                width=self.width,
+                height=self.height,
+                entry=self.maze_obj.entry,
+                exit_pt=self.maze_obj.exit_pt,
+                output_file=self.maze_obj.output_file,
+                perfect=True,
+                seed=new_seed
+            )
+
+            algo = self.config.get('ALGORITHM', 'DFS').upper()
+            if algo == 'PRIM':
+                new_maze.generate_prim()
+            else:
+                new_maze.generate()
+            self.maze_obj = new_maze
+            self.grid = new_maze.grid
             
+            self.solution = self.maze_obj.solve()
+            
+            self.needs_update = True
+
+        # --- C (Cambiar Color) ---
+        elif keycode in [8, 99, 67, 14]:
+            self.change_wall_color()
+
         return 0
 
     def run(self):
