@@ -30,11 +30,11 @@ def main():
         s_str = cfg.get('EXIT', f'{w-1},{h-1}').split(',')
         s_coord = (int(s_str[0]), int(s_str[1]))
         out_file = cfg.get('OUTPUT_FILE', 'maze.txt')
-        
+
         # Generación inicial
         maze = MazeGenerator(w, h, e_coord, s_coord, out_file)
         algo = cfg.get('ALGORITHM', 'DFS').upper()
-        
+
         if algo == 'PRIM':
             maze.generate_prim()
         else:
@@ -47,7 +47,7 @@ def main():
         # Iniciar el visualizador (DrawMaze)
         # Asegúrate de que draw.py sea el que usa mlx_ptr
         vis = DrawMaze(w, h, maze.grid, cfg, solution_path, maze)
-        
+
         # IMPORTANTE: Llamamos a run(), NO accedemos a vis.ptr
         vis.run()
 

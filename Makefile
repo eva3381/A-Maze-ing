@@ -1,33 +1,48 @@
-NAME        = a_maze_ing
-VENV        = venv
-PYTHON      = $(VENV)/bin/python3
-PIP         = $(VENV)/bin/pip
-MAIN        = a_maze_ing.py
-RESET       = \033[0m
-CYAN        = \033[36m
 
-all: banner $(VENV) run
+NAME         = a_maze_ing
+VENV         = venv
+PYTHON       = $(VENV)/bin/python3
 
-banner:
-	@echo "$(CYAN)A-MAZE-ING PROJECT (MLX VERSION)$(RESET)"
+PIP          = $(PYTHON) -m pip
+MAIN         = a_maze_ing.py
+CONFIG_FILE  = config.txt
+REQUIREMENTS = requirements.txt
 
-$(VENV):
-	@echo "$(CYAN)Creating virtual environment and installing flake8...$(RESET)"
+
+SRC_FILES    = maze_generator.py draw.py a_maze_ing.py
+
+
+
+all: install run
+
+install: $(VENV)/bin/activate
+
+$(VENV)/bin/activate: $(REQUIREMENTS)
+	@echo "Status: Creating virtual environment..."
 	@python3 -m venv $(VENV)
+	@echo "Status: Updating pip and installing dependencies..."
 	@$(PIP) install --upgrade pip
-	@$(PIP) install flake8
+	@$(PIP) install -r $(REQUIREMENTS)
+	@touch $(VENV)/bin/activate
 
-run:
-	@$(PYTHON) $(MAIN) config.txt
+run: install
+	@echo "Status: Executing $(NAME)..."
+	@$(PYTHON) $(MAIN) $(CONFIG_FILE)
 
-lint:
-	@echo "$(CYAN)Running flake8 check...$(RESET)"
-	@$(VENV)/bin/flake8 --exclude=$(VENV) .
+
+lint: install
+	@echo "--- Static Analysis ---"
+	@echo "[flake8] Checking code style..."
+	@$(PYTHON) -m flake8 $(SRC_FILES)
+	@echo "[mypy] Checking type annotations..."
+	@$(PYTHON) -m mypy --ignore-missing-imports $(SRC_FILES)
+
 
 clean:
-	@echo "$(CYAN)Cleaning environment...$(RESET)"
-	@rm -rf __pycache__ $(VENV)
+	@echo "Status: Cleaning temporary files..."
+	@rm -rf __pythoncache__ .mypy_cache .pytest_cache
+	@rm -rf $(VENV)
 
 re: clean all
 
-.PHONY: all run clean re banner lint
+.PHONY: all install run lint clean re

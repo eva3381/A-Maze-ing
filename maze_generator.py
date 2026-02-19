@@ -54,28 +54,66 @@ class MazeGenerator:
         self._force_entry_exit()
 
     def _add_pattern_42(self) -> None:
-        pattern = [
-            [0, 1, 0, 1, 0, 0, 0, 0],
-            [0, 1, 0, 1, 1, 1, 1, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0],
-            [1, 1, 0, 1, 0, 1, 1, 1],
-            [1, 1, 0, 1, 0, 0, 0, 0],
+        # Inicializamos la lista para identificar las celdas en el visualizador
+        self.pattern_cells = []
+        
+        # Coordenadas relativas para formar el número 4 (forma de silla)
+        n_four = [
+            (0,0), (0,1), (0,2),           # Columna izquierda
+            (1,2), (2,2),                 # Barra horizontal
+            (2,0), (2,1), (2,2), (2,3), (2,4) # Columna derecha larga
         ]
-        ph, pw = 5, 8
-        if self.width < pw or self.height < ph:
-            print("Error: Maze too small for '42' pattern.")
+        
+        # Coordenadas relativas para formar el número 2
+        n_two = [
+            (0,0), (1,0), (2,0),           # Techo
+            (2,1), (2,2),                 # Bajada derecha
+            (1,2), (0,2),                 # Barra media
+            (0,3), (0,4),                 # Bajada izquierda
+            (1,4), (2,4)                  # Base
+        ]
+
+        # Calculamos el offset para centrar el logo en el laberinto
+        # El ancho total del logo es 7-8 celdas incluyendo el espacio
+        sx, sy = (self.width - 8) // 2, (self.height - 5) // 2
+        if sx < 0 or sy < 0:
             return
-            
-        sx, sy = (self.width - pw) // 2, (self.height - ph) // 2
-        for y in range(ph):
-            for x in range(pw):
-                if pattern[y][x] == 0:
-                    cx, cy = sx + x, sy + y
-                    self.grid[cy][cx] = 0
-                    if cy > 0: self.grid[cy-1][cx] &= ~4
-                    if cy < self.height-1: self.grid[cy+1][cx] &= ~1
-                    if cx < self.width-1: self.grid[cy][cx+1] &= ~8
-                    if cx > 0: self.grid[cy][cx-1] &= ~2
+
+        # Construimos la lista total de celdas del patrón
+        full_pattern = []
+        for x, y in n_four:
+            full_pattern.append((sx + x, sy + y))
+        for x, y in n_two:
+            full_pattern.append((sx + x + 5, sy + y)) # +5 para dejar espacio entre el 4 y el 2
+
+        # Aplicamos el patrón al grid con validación de muros
+        for cx, cy in full_pattern:
+            if 0 <= cx < self.width and 0 <= cy < self.height:
+                # 1. Marcamos la celda como bloque sólido (todos los muros cerrados = 15)
+                self.grid[cy][cx] = 15
+                
+                # 2. Guardamos la coordenada para el relleno blanco en draw.py
+                self.pattern_cells.append((cx, cy))
+                
+                # 3. SINCRONIZACIÓN DE MUROS (Vital para el output_validator)
+                # Si esta celda es un muro, las celdas adyacentes DEBEN tener 
+                # el muro correspondiente hacia esta celda.
+                
+                # Vecino de ARRIBA: debe cerrar su muro SUR (4)
+                if cy > 0: 
+                    self.grid[cy-1][cx] |= 4
+                
+                # Vecino de ABAJO: debe cerrar su muro NORTE (1)
+                if cy < self.height - 1: 
+                    self.grid[cy+1][cx] |= 1
+                
+                # Vecino de la IZQUIERDA: debe cerrar su muro ESTE (2)
+                if cx > 0: 
+                    self.grid[cy][cx-1] |= 2
+                
+                # Vecino de la DERECHA: debe cerrar su muro OESTE (8)
+                if cx < self.width - 1: 
+                    self.grid[cy][cx+1] |= 8
 
     def _force_entry_exit(self) -> None:
         for (x, y) in [self.entry, self.exit_pt]:
