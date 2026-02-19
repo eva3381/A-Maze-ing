@@ -3,6 +3,7 @@ import os
 from maze_generator import MazeGenerator
 from draw import DrawMaze
 
+
 def load_config(file_path: str):
     config = {}
     try:
@@ -50,6 +51,7 @@ def main():
     except Exception as e:
         print(f"Error inesperado: {e}")
         os._exit(1)
+
 
 if __name__ == "__main__":
     main()
