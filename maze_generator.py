@@ -1,4 +1,5 @@
 import random
+import sys
 from typing import List, Tuple, Optional
 
 
@@ -50,26 +51,39 @@ class MazeGenerator:
 
         return cells
 
-    def _get_unvisited_neighbors(self, x: int, y: int, visited: List[List[bool]]):
+    def _get_unvisited_neighbors(
+            self, x: int, y: int, visited: List[List[bool]]
+            ):
         results = []
         directions = [(0, -1, 1), (1, 0, 2), (0, 1, 4), (-1, 0, 8)]
         for dx, dy, bit in directions:
             nx, ny = x + dx, y + dy
-            if 0 <= nx < self.width and 0 <= ny < self.height and not visited[ny][nx]:
+            if (0 <= nx < self.width and 0 <= ny < self.height and not
+                    visited[ny][nx]):
+
                 results.append((nx, ny, bit))
         return results
 
     def generate(self) -> None:
         """Genera un laberinto perfecto rodeando el logo '42'."""
-        visited = [[False for _ in range(self.width)] for _ in range(self.height)]
+        visited = [[False for _ in range(self.width)]
+                   for _ in range(self.height)]
 
-        # 1. Preparar el patrón '42' como zona prohibida
-        pattern_coords = self._setup_pattern_42()
-        for px, py in pattern_coords:
-            if 0 <= px < self.width and 0 <= py < self.height:
-                visited[py][px] = True
-                self.grid[py][px] = 15  # Bloque sólido
-                self.pattern_cells.add((px, py))
+        # 1. Preparar el patrón '42' como zona prohibida sólo si hay espacio
+        # Evitar colocar el logo si el laberinto es menor que 10x10
+        if self.width >= 10 and self.height >= 10:
+            pattern_coords = self._setup_pattern_42()
+            for px, py in pattern_coords:
+                if 0 <= px < self.width and 0 <= py < self.height:
+                    visited[py][px] = True
+                    self.grid[py][px] = 15  # Bloque sólido
+                    self.pattern_cells.add((px, py))
+        else:
+            # Asegurarnos de que no haya celdas del patrón marcadas
+            self.pattern_cells.clear()
+            # Requisito: imprimir mensaje cuando el patrón '42' se omite
+            print("Warning: pattern '42' omitted because maze size"
+                  " < 10x10", file=sys.stderr)
 
         # 2. Algoritmo DFS para garantizar un laberinto perfecto
         stack = [self.entry]
