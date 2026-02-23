@@ -273,6 +273,7 @@ class DrawMaze:
         # pantalla final (negra + mensaje). El único modo de terminar es llegar
         # a la salida; no salimos con ESC.
         if self.game_over:
+            self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
             for i in range(len(self.img_data)):
                 self.img_data[i] = 0
             self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
