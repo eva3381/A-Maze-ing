@@ -4,6 +4,8 @@ from mlx import Mlx
 import time
 from animator import Animator
 from player import draw_player_buffer, draw_player_overlay
+from timer import draw_timer_overlay
+from coins import place_coins, draw_coins, collect_coin
 
 
 class DrawMaze:
@@ -18,10 +20,15 @@ class DrawMaze:
         self.show_solution = False
         self.needs_update = True
         # Grosor de los muros en píxeles (1 = 1px)
-        self.wall_thickness = 5
+        self.wall_thickness = 3
 
         self.anim_duration = 5.0
         self.anim_start_time = None
+        # Juego: tiempos de partida/fin para el temporizador
+        self.play_start_time = None
+        self.end_time = None
+        # Estado para evitar redibujar el mismo segundo repetidamente
+        self._last_timer_sec = None
 
         self.mlx = Mlx()
         self.mlx_ptr = self.mlx.mlx_init()
@@ -47,8 +54,15 @@ class DrawMaze:
         self.animator = Animator()
         # Posición del jugador (siempre existe) y estado del juego
         self.player_pos = self.maze_obj.entry
-        self.player_color = 0xFFFF00
+        # Color del jugador cambiado a blanco
+        self.player_color = 0xFFFFFF
         self.game_over = False
+        # Monedas y puntuación
+        self.coins = set()
+        self.coins_collected = 0
+        self.moves_count = 0
+        self.coin_color = 0xFFD700
+        place_coins(self)
 
     def _put_pixel(self, x, y, color):
         if 0 <= x < self.win_w and 0 <= y < self.win_h:
@@ -147,6 +161,8 @@ class DrawMaze:
         if t < 1.0:
             self.needs_update = True
 
+    # Temporizador: la funcionalidad principal se trasladó a timer.py
+
     def _fill_tile(self, x, y, color):
         px, py = x * self.tile_size, y * self.tile_size
         for dy in range(self.tile_size):
@@ -170,16 +186,23 @@ class DrawMaze:
         # Si no hay cambios, simplemente volvemos a poner la imagen
         #  actual en la ventana
         if not self.needs_update:
-            # Ensure the player's pixels are present in the image buffer
-            if not self.game_over:
-                draw_player_buffer(self)
             self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr,
                                              self.img, 0, 0)
-            # Dibujar jugador en el buffer y como overlay para asegurar
-            # visibilidad en caso de que `mlx_pixel_put` no funcione.
+            # Dibujar jugador en buffer y overlay para asegurar visibilidad
             if not self.game_over:
                 draw_player_buffer(self)
                 draw_player_overlay(self)
+            # Mostrar temporizador en esquina superior derecha.
+            if self.play_start_time is not None and not self.game_over:
+                elapsed = int(time.time() - self.play_start_time)
+                draw_timer_overlay(self, elapsed)
+                # HUD: monedas y movimientos
+                hud = f"Coins: {self.coins_collected}  Moves: {self.moves_count}"
+                char_w = 10
+                tx = max(10, self.win_w - (len(hud) * char_w) - 10)
+                ty = 10 + 16
+                self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
+                                        tx, ty, 0xFFFFFF, hud)
             return 0
 
         # 1. LIMPIEZA DEL BUFFER (Fondo negro)
@@ -256,6 +279,10 @@ class DrawMaze:
 
         # 5. VOLCADO FINAL DE LA IMAGEN
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
+        # Dibujar monedas en el buffer antes de volcar la imagen
+        if getattr(self, 'coins', None):
+            draw_coins(self)
+
         self.mlx.mlx_put_image_to_window(
             self.mlx_ptr, self.win_ptr, self.img, 0, 0
         )
@@ -268,6 +295,10 @@ class DrawMaze:
         if not self.game_over:
             draw_player_buffer(self)
             draw_player_overlay(self)
+            # Mostrar temporizador en esquina superior derecha
+            if self.play_start_time is not None:
+                elapsed = int(time.time() - self.play_start_time)
+                draw_timer_overlay(self, elapsed)
 
         # Si el jugador llegó a la salida, marcar fin del juego y mostrar
         # pantalla final (negra + mensaje). El único modo de terminar es llegar
@@ -293,6 +324,26 @@ class DrawMaze:
             hint_y = msg_y + 24
             self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
                                     hint_x, hint_y, 0xFFFFFF, hint)
+            # Mostrar tiempo final junto al mensaje
+            if self.play_start_time is not None:
+                end_t = self.end_time or time.time()
+                total = int(end_t - self.play_start_time)
+                mins = total // 60
+                secs = total % 60
+                final_text = f"Total time: {mins}:{secs:02d}"
+                final_w = len(final_text) * char_w
+                final_x = max(10, (self.win_w - final_w) // 2)
+                final_y = hint_y + 24
+                self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
+                                        final_x, final_y, 0xFFFFFF,
+                                        final_text)
+                # Mostrar monedas recogidas y movimientos
+                stats = f"Coins: {self.coins_collected}  Moves: {self.moves_count}"
+                stats_w = len(stats) * char_w
+                stats_x = max(10, (self.win_w - stats_w) // 2)
+                stats_y = final_y + 20
+                self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
+                                        stats_x, stats_y, 0xFFFFFF, stats)
             self.needs_update = False
             return 0
 
@@ -389,6 +440,11 @@ class DrawMaze:
             self.grid = new_maze.grid
             self.solution = self.maze_obj.solve()
 
+            # Colocar nuevas monedas y resetear contadores
+            place_coins(self)
+            self.coins_collected = 0
+            self.moves_count = 0
+
             # resetear estado de solución y animación
             self.show_solution = False
             self.anim_start_time = None
@@ -396,6 +452,10 @@ class DrawMaze:
             # resetear jugador y estado del juego
             self.player_pos = self.maze_obj.entry
             self.game_over = False
+            # resetear temporizador
+            self.play_start_time = time.time()
+            self.end_time = None
+            self._last_timer_sec = None
             self._debug_player_calls = False
             if self.animator:
                 self.animator.active = False
@@ -411,6 +471,10 @@ class DrawMaze:
         return 0
 
     def run(self):
+        # Iniciar temporizador de juego justo antes del bucle
+        self.play_start_time = time.time()
+        self.end_time = None
+        self._last_timer_sec = None
         self.mlx.mlx_key_hook(self.win_ptr, self.handle_keys, None)
         self.mlx.mlx_loop_hook(self.mlx_ptr, self.render, None)
         self.mlx.mlx_loop(self.mlx_ptr)
@@ -449,9 +513,17 @@ class DrawMaze:
             if 0 <= nx < self.width and 0 <= ny < self.height:
                 self.player_pos = (nx, ny)
                 self.needs_update = True
+                # Contar movimiento válido
+                self.moves_count += 1
+                # Recoger moneda si existe en la nueva posición
+                if collect_coin(self, (nx, ny)):
+                    self.coins_collected += 1
+                    self.needs_update = True
                 # Si llegó a la salida, marcar terminado (game over)
                 if (nx, ny) == self.maze_obj.exit_pt:
                     self.game_over = True
+                    # registrar tiempo de finalización
+                    self.end_time = time.time()
                     # enable debug flag so player draw helpers
                     #  log if still called
                     self._debug_player_calls = True

@@ -48,7 +48,7 @@ def main():
 
     except ConfigError as e:
         # Capturamos el error pero salimos de forma "limpia" para el Makefile
-        print(f"\n[!] Maze Configuration Issue:")
+        print("\n[!] Maze Configuration Issue:")
         print(f"{e}")
         print("\nPlease fix the config.txt file and try again.\n")
         sys.exit(0)  # <--- Cambiado de 1 a 0 para evitar el rojo en make

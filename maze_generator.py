@@ -1,7 +1,7 @@
 import random
-import sys
-from typing import List, Tuple, Optional
+from typing import Tuple, Optional
 from collections import deque
+
 
 class MazeGenerator:
     """
@@ -20,40 +20,80 @@ class MazeGenerator:
         self.output_file = output_file
         self.perfect = perfect
         self.grid = [[15 for _ in range(width)] for _ in range(height)]
-        
+
         # Gestión de semilla y RNG
-        self.seed = seed if seed is not None else random.randint(0, 1000000)
+        if seed is not None:
+            self.seed = seed
+        else:
+            self.seed = random.randint(0, 1000000)
         self._rng = random.Random(self.seed)
 
         # Usamos pattern_cells para compatibilidad con draw.py
         self.pattern_cells = self._setup_logo_42()
 
     def _setup_logo_42(self) -> set:
-        """Dibuja el logo '42' centrado matemáticamente."""
+        """Dibuja el logo '42' centrado, desplazándose si colisiona con la
+        entrada o salida."""
         cells = set()
         logo_w, logo_h = 7, 5
-        off_x = (self.width - logo_w) // 2
-        off_y = (self.height - logo_h) // 2
-        
+
+        # Patrón del logo 42
         pattern = [
-            (0,0), (0,1), (0,2), (1,2), (2,0), (2,1), (2,2), (2,3), (2,4), # 4
-            (4,0), (5,0), (6,0), (6,1), (6,2), (5,2), (4,2), (4,3), (4,4), (5,4), (6,4) # 2
+            # "4"
+            (0, 0), (0, 1), (0, 2), (1, 2), (2, 0), (2, 1), (2, 2),
+            (2, 3), (2, 4),
+            # "2"
+            (4, 0), (5, 0), (6, 0), (6, 1), (6, 2), (5, 2), (4, 2),
+            (4, 3), (4, 4), (5, 4), (6, 4)
         ]
-        
-        for dx, dy in pattern:
-            nx, ny = off_x + dx, off_y + dy
-            if 0 <= nx < self.width and 0 <= ny < self.height:
+
+        # Intentar posiciones: centro, luego esquinas
+        positions = [
+            # Centro
+            ((self.width - logo_w) // 2, (self.height - logo_h) // 2),
+            # Esquina superior-izquierda
+            (1, 1),
+            # Esquina superior-derecha
+            (self.width - logo_w - 1, 1),
+            # Esquina inferior-izquierda
+            (1, self.height - logo_h - 1),
+            # Esquina inferior-derecha
+            (self.width - logo_w - 1, self.height - logo_h - 1),
+        ]
+
+        for off_x, off_y in positions:
+            cells = set()
+            valid = True
+
+            # Verificar que la posición es válida y no colisiona con
+            # entrada ni salida
+            for dx, dy in pattern:
+                nx, ny = off_x + dx, off_y + dy
+                if not (0 <= nx < self.width and 0 <= ny < self.height):
+                    valid = False
+                    break
+                # Si la entrada o salida está en este patrón, buscar otra
+                if (nx, ny) == self.exit_pt or (nx, ny) == self.entry:
+                    valid = False
+                    break
                 cells.add((nx, ny))
-                self.grid[ny][nx] = 0
-        
-        # Conectar las celdas internas del logo
-        for cx, cy in cells:
-            for b, dx, dy in [(2,1,0), (4,0,1)]:
-                nx, ny = cx + dx, cy + dy
-                if (nx, ny) in cells:
-                    self.grid[cy][cx] &= ~b
-                    self.grid[ny][nx] &= ~self.OPPOSITE_WALLS[b]
-        return cells
+
+            if valid:
+                # Aplicar el patrón al grid
+                for cx, cy in cells:
+                    self.grid[cy][cx] = 0
+
+                # Conectar las celdas internas del logo
+                for cx, cy in cells:
+                    for b, dx, dy in [(2, 1, 0), (4, 0, 1)]:
+                        nx, ny = cx + dx, cy + dy
+                        if (nx, ny) in cells:
+                            self.grid[cy][cx] &= ~b
+                            self.grid[ny][nx] &= ~self.OPPOSITE_WALLS[b]
+                return cells
+
+        # Si nada funciona, devolver conjunto vacío
+        return set()
 
     def generate(self) -> None:
         """Genera el laberinto usando DFS."""
@@ -63,9 +103,10 @@ class MazeGenerator:
         while stack:
             cx, cy = stack[-1]
             neighbors = []
-            for b, dx, dy in [(1,0,-1), (2,1,0), (4,0,1), (8,-1,0)]:
+            for b, dx, dy in [(1, 0, -1), (2, 1, 0), (4, 0, 1), (8, -1, 0)]:
                 nx, ny = cx + dx, cy + dy
-                if 0 <= nx < self.width and 0 <= ny < self.height and (nx, ny) not in visited:
+                if (0 <= nx < self.width and 0 <= ny < self.height and
+                        (nx, ny) not in visited):
                     neighbors.append((b, nx, ny))
 
             if neighbors:
@@ -84,30 +125,36 @@ class MazeGenerator:
     def add_paths(self) -> None:
         """Rompe muros adicionales para crear ciclos y múltiples rutas."""
         # Aumentamos la cantidad de muros a romper para que se note el efecto
-        muros_a_romper = (self.width * self.height) // 10 
+        muros_a_romper = (self.width * self.height) // 10
 
         for _ in range(muros_a_romper):
             # Elegimos celdas evitando los bordes exteriores
             x = self._rng.randint(1, self.width - 2)
             y = self._rng.randint(1, self.height - 2)
-            
+
             # Intentamos romper un muro aleatorio (N, E, S, o W)
             muro = self._rng.choice([1, 2, 4, 8])
-            dx, dy = {1:(0,-1), 2:(1,0), 4:(0,1), 8:(-1,0)}[muro]
-            
+            dx, dy = {1: (0, -1), 2: (1, 0), 4: (0, 1), 8: (-1, 0)}[muro]
+
             nx, ny = x + dx, y + dy
-            
+
             # Reglas: No romper muros del logo y mantenerse en límites
-            if (x, y) not in self.pattern_cells and (nx, ny) not in self.pattern_cells:
-                if self.grid[y][x] & muro: # Si hay un muro
+            if ((x, y) not in self.pattern_cells and
+                    (nx, ny) not in self.pattern_cells):
+                if self.grid[y][x] & muro:  # Si hay un muro
                     self.grid[y][x] &= ~muro
                     self.grid[ny][nx] &= ~self.OPPOSITE_WALLS[muro]
 
     def solve(self) -> str:
-        """BFS para encontrar siempre el camino MÁS CORTO (ideal para laberintos con ciclos)."""
+        """BFS para encontrar siempre el camino MÁS CORTO.
+        Ideal para laberintos con ciclos.
+        """
         queue = deque([(self.entry, "")])
         visited = {self.entry}
-        moves = [(1, 0, -1, 'N'), (2, 1, 0, 'E'), (4, 0, 1, 'S'), (8, -1, 0, 'W')]
+        moves = [
+            (1, 0, -1, 'N'), (2, 1, 0, 'E'),
+            (4, 0, 1, 'S'), (8, -1, 0, 'W')
+        ]
 
         while queue:
             (cx, cy), path = queue.popleft()
@@ -117,7 +164,8 @@ class MazeGenerator:
             for bit, dx, dy, char in moves:
                 if not (self.grid[cy][cx] & bit):
                     nx, ny = cx + dx, cy + dy
-                    if 0 <= nx < self.width and 0 <= ny < self.height and (nx, ny) not in visited:
+                    if (0 <= nx < self.width and 0 <= ny < self.height and
+                            (nx, ny) not in visited):
                         visited.add((nx, ny))
                         queue.append(((nx, ny), path + char))
         return ""
@@ -129,6 +177,6 @@ class MazeGenerator:
             for row in self.grid:
                 line = "".join(hex(cell)[2:].upper() for cell in row)
                 f.write(line + "\n")
-            f.write(f"\n{self.entry[0]},{self.entry[1]}\n")
+            f.write(f"{self.entry[0]},{self.entry[1]}\n")
             f.write(f"{self.exit_pt[0]},{self.exit_pt[1]}\n")
             f.write(f"{solution}\n")
