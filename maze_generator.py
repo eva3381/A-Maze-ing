@@ -1,12 +1,12 @@
 import random
 import sys
 from typing import List, Tuple, Optional
-
+from collections import deque
 
 class MazeGenerator:
     """
-    Generador de laberintos que garantiza perfección (sin ciclos) y solución
-    única. Utiliza un algoritmo de búsqueda en profundidad (DFS) con retroceso.
+    Generador de laberintos con soporte para logo '42' central.
+    Si perfect=False, rompe muros adicionales para crear múltiples soluciones.
     """
     OPPOSITE_WALLS = {1: 4, 2: 8, 4: 1, 8: 2}
 
@@ -18,126 +18,96 @@ class MazeGenerator:
         self.entry = entry
         self.exit_pt = exit_pt
         self.output_file = output_file
-        self.perfect = perfect  # Si es True, no habrá ciclos
+        self.perfect = perfect
         self.grid = [[15 for _ in range(width)] for _ in range(height)]
-        self.pattern_cells = set()
-
-        # Gestión de semilla
+        
+        # Gestión de semilla y RNG
         self.seed = seed if seed is not None else random.randint(0, 1000000)
-        random.seed(self.seed)
+        self._rng = random.Random(self.seed)
 
-    def _setup_pattern_42(self) -> List[Tuple[int, int]]:
-        """Calcula las celdas que forman el logo '42'."""
-        cells = []
-        # Definición relativa del número 4
-        n_four = [
-            (0, 0), (0, 1), (0, 2), (1, 2), (2, 2),
-            (2, 0), (2, 1), (2, 3), (2, 4)
+        # Usamos pattern_cells para compatibilidad con draw.py
+        self.pattern_cells = self._setup_logo_42()
+
+    def _setup_logo_42(self) -> set:
+        """Dibuja el logo '42' centrado matemáticamente."""
+        cells = set()
+        logo_w, logo_h = 7, 5
+        off_x = (self.width - logo_w) // 2
+        off_y = (self.height - logo_h) // 2
+        
+        pattern = [
+            (0,0), (0,1), (0,2), (1,2), (2,0), (2,1), (2,2), (2,3), (2,4), # 4
+            (4,0), (5,0), (6,0), (6,1), (6,2), (5,2), (4,2), (4,3), (4,4), (5,4), (6,4) # 2
         ]
-        # Definición relativa del número 2
-        n_two = [
-            (0, 0), (1, 0), (2, 0), (2, 1), (2, 2),
-            (1, 2), (0, 2), (0, 3), (0, 4), (1, 4), (2, 4)
-        ]
-
-        # Centrar el logo
-        start_x = (self.width - 8) // 2
-        start_y = (self.height - 5) // 2
-
-        for x, y in n_four:
-            cells.append((start_x + x, start_y + y))
-        for x, y in n_two:
-            cells.append((start_x + x + 5, start_y + y))
-
+        
+        for dx, dy in pattern:
+            nx, ny = off_x + dx, off_y + dy
+            if 0 <= nx < self.width and 0 <= ny < self.height:
+                cells.add((nx, ny))
+                self.grid[ny][nx] = 0
+        
+        # Conectar las celdas internas del logo
+        for cx, cy in cells:
+            for b, dx, dy in [(2,1,0), (4,0,1)]:
+                nx, ny = cx + dx, cy + dy
+                if (nx, ny) in cells:
+                    self.grid[cy][cx] &= ~b
+                    self.grid[ny][nx] &= ~self.OPPOSITE_WALLS[b]
         return cells
 
-    def _get_unvisited_neighbors(
-            self, x: int, y: int, visited: List[List[bool]]
-            ):
-        results = []
-        directions = [(0, -1, 1), (1, 0, 2), (0, 1, 4), (-1, 0, 8)]
-        for dx, dy, bit in directions:
-            nx, ny = x + dx, y + dy
-            if (0 <= nx < self.width and 0 <= ny < self.height and not
-                    visited[ny][nx]):
-
-                results.append((nx, ny, bit))
-        return results
-
     def generate(self) -> None:
-        """Genera un laberinto perfecto rodeando el logo '42'."""
-        visited = [[False for _ in range(self.width)]
-                   for _ in range(self.height)]
-
-        # 1. Preparar el patrón '42' como zona prohibida sólo si hay espacio
-        # Evitar colocar el logo si el laberinto es menor que 10x10
-        if self.width >= 10 and self.height >= 10:
-            pattern_coords = self._setup_pattern_42()
-            for px, py in pattern_coords:
-                if 0 <= px < self.width and 0 <= py < self.height:
-                    visited[py][px] = True
-                    self.grid[py][px] = 15  # Bloque sólido
-                    self.pattern_cells.add((px, py))
-        else:
-            # Asegurarnos de que no haya celdas del patrón marcadas
-            self.pattern_cells.clear()
-            # Requisito: imprimir mensaje cuando el patrón '42' se omite
-            print("Warning: pattern '42' omitted because maze size"
-                  " < 10x10", file=sys.stderr)
-
-        # 2. Algoritmo DFS para garantizar un laberinto perfecto
+        """Genera el laberinto usando DFS."""
         stack = [self.entry]
-        visited[self.entry[1]][self.entry[0]] = True
+        visited = {self.entry} | self.pattern_cells
 
         while stack:
             cx, cy = stack[-1]
-            neighbors = self._get_unvisited_neighbors(cx, cy, visited)
+            neighbors = []
+            for b, dx, dy in [(1,0,-1), (2,1,0), (4,0,1), (8,-1,0)]:
+                nx, ny = cx + dx, cy + dy
+                if 0 <= nx < self.width and 0 <= ny < self.height and (nx, ny) not in visited:
+                    neighbors.append((b, nx, ny))
 
             if neighbors:
-                nx, ny, bit = random.choice(neighbors)
-                # Romper muros entre celda actual y vecina
-                self.grid[cy][cx] &= ~bit
-                self.grid[ny][nx] &= ~self.OPPOSITE_WALLS[bit]
-
-                visited[ny][nx] = True
+                b, nx, ny = self._rng.choice(neighbors)
+                self.grid[cy][cx] &= ~b
+                self.grid[ny][nx] &= ~self.OPPOSITE_WALLS[b]
+                visited.add((nx, ny))
                 stack.append((nx, ny))
             else:
                 stack.pop()
 
-        # 3. Asegurar que la entrada y salida sean accesibles
-        self._force_entry_exit()
+        # Si PERFECT es False, creamos las soluciones múltiples
+        if not self.perfect:
+            self.add_paths()
 
-    def _force_entry_exit(self) -> None:
-        """Asegura que las celdas de entrada y salida no
-        tengan muros exteriores."""
-        # Entrada (ej. arriba a la izquierda)
-        # Si la entrada está en el borde superior, abrimos el norte
-        ex, ey = self.entry
-        if ey == 0:
-            self.grid[ey][ex] &= ~1
-        elif ey == self.height - 1:
-            self.grid[ey][ex] &= ~4
+    def add_paths(self) -> None:
+        """Rompe muros adicionales para crear ciclos y múltiples rutas."""
+        # Aumentamos la cantidad de muros a romper para que se note el efecto
+        muros_a_romper = (self.width * self.height) // 10 
 
-        # Salida
-        sx, sy = self.exit_pt
-        if sy == 0:
-            self.grid[sy][sx] &= ~1
-        elif sy == self.height - 1:
-            self.grid[sy][sx] &= ~4
-        elif sx == 0:
-            self.grid[sy][sx] &= ~8
-        elif sx == self.width - 1:
-            self.grid[sy][sx] &= ~2
+        for _ in range(muros_a_romper):
+            # Elegimos celdas evitando los bordes exteriores
+            x = self._rng.randint(1, self.width - 2)
+            y = self._rng.randint(1, self.height - 2)
+            
+            # Intentamos romper un muro aleatorio (N, E, S, o W)
+            muro = self._rng.choice([1, 2, 4, 8])
+            dx, dy = {1:(0,-1), 2:(1,0), 4:(0,1), 8:(-1,0)}[muro]
+            
+            nx, ny = x + dx, y + dy
+            
+            # Reglas: No romper muros del logo y mantenerse en límites
+            if (x, y) not in self.pattern_cells and (nx, ny) not in self.pattern_cells:
+                if self.grid[y][x] & muro: # Si hay un muro
+                    self.grid[y][x] &= ~muro
+                    self.grid[ny][nx] &= ~self.OPPOSITE_WALLS[muro]
 
     def solve(self) -> str:
-        """Resuelve el laberinto usando BFS para encontrar el camino único."""
-        from collections import deque
+        """BFS para encontrar siempre el camino MÁS CORTO (ideal para laberintos con ciclos)."""
         queue = deque([(self.entry, "")])
         visited = {self.entry}
-
-        # Direcciones: bit de muro, cambio x, cambio y, letra comando
-        moves = [(1, 0, -1, 'N'), (2, 1, 0, 'E'),
-                 (4, 0, 1, 'S'), (8, -1, 0, 'W')]
+        moves = [(1, 0, -1, 'N'), (2, 1, 0, 'E'), (4, 0, 1, 'S'), (8, -1, 0, 'W')]
 
         while queue:
             (cx, cy), path = queue.popleft()
@@ -145,17 +115,15 @@ class MazeGenerator:
                 return path
 
             for bit, dx, dy, char in moves:
-                # Si no hay muro en esa dirección
                 if not (self.grid[cy][cx] & bit):
                     nx, ny = cx + dx, cy + dy
-                    if (0 <= nx < self.width and 0 <= ny < self.height and
-                       (nx, ny) not in visited):
+                    if 0 <= nx < self.width and 0 <= ny < self.height and (nx, ny) not in visited:
                         visited.add((nx, ny))
                         queue.append(((nx, ny), path + char))
         return ""
 
     def save(self) -> None:
-        """Guarda el laberinto y su solución en el archivo de salida."""
+        """Guarda el laberinto y la solución."""
         solution = self.solve()
         with open(self.output_file, 'w') as f:
             for row in self.grid:

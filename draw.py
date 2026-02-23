@@ -379,7 +379,7 @@ class DrawMaze:
                 seed=new_seed
             )
 
-            algo = self.config.algorithm  # El parser ya lo guardó en mayúsculas
+            algo = self.config.algorithm
             if algo == 'PRIM':
                 new_maze.generate_prim()
             else:

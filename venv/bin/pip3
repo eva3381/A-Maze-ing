@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/evafletefolgueira/Documents/Cursus 42/A-Maze-ing/venv/bin/python3" "$0" "$@"
-' '''
+#!/home/evaflete/Desktop/A-Maze-Ing03/AMI/A-Maze-ing-David/mi_git/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
