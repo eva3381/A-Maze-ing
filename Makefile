@@ -37,7 +37,7 @@ lint: install
 	@echo "[mypy] Checking type annotations..."
 	@$(PYTHON) -m mypy --ignore-missing-imports $(SRC_FILES)
 
-
+        # Aquí simplemente actuali
 clean:
 	@echo "Status: Cleaning temporary files..."
 	@rm -rf __pythoncache__ .mypy_cache .pytest_cache

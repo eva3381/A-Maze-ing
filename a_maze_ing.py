@@ -3,6 +3,7 @@ import os
 from maze_generator import MazeGenerator
 from draw import DrawMaze
 
+
 def load_config(file_path: str):
     config = {}
     try:
@@ -32,10 +33,26 @@ def main():
         out_file = cfg.get('OUTPUT_FILE', 'maze.txt')
 
         # Generación inicial
-        maze = MazeGenerator(w, h, e_coord, s_coord, out_file)
-        algo = cfg.get('ALGORITHM', 'DFS').upper()
+        # Parsear flag PERFECT (acepta '1', 'true', 'yes', 'y')
+        perfect_val = cfg.get('PERFECT', 'False').strip().lower()
+        perfect = perfect_val in ('1', 'true', 'yes', 'y')
 
-        if algo == 'PRIM':
+        # Parsear SEED si existe
+        seed_val = cfg.get('SEED')
+        seed = None
+        if seed_val is not None and seed_val != '':
+            try:
+                seed = int(seed_val)
+            except ValueError:
+                print(f"Advertencia: SEED inválida"
+                      f"('{seed_val}'), se ignorará.")
+
+        maze = MazeGenerator(
+            w, h, e_coord, s_coord, out_file, perfect=perfect, seed=seed
+            )
+
+        algo = cfg.get('ALGORITHM', 'DFS').upper()
+        if algo == 'PRIM' and hasattr(maze, 'generate_prim'):
             maze.generate_prim()
         else:
             maze.generate()
@@ -50,6 +67,7 @@ def main():
     except Exception as e:
         print(f"Error inesperado: {e}")
         os._exit(1)
+
 
 if __name__ == "__main__":
     main()
