@@ -1,4 +1,4 @@
-#!/home/evaflete/AMazeIng01/prueba01/venv/bin/python3
+#!/home/gortiz-j/Desktop/amazing_Davidgithub/venv/bin/python3
 import sys
 from flake8.main.cli import main
 if __name__ == '__main__':

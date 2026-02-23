@@ -50,10 +50,6 @@ class Animator:
     def draw(self, draw_maze) -> None:
         """Dibuja el cuadrado en la posición actual sobre el objeto
         `draw_maze`.
-
-        Espera que `draw_maze` tenga métodos `_fill_tile(x,y,color)` y
-        atributos `tile_size` y `maze_obj` para extraer coordenadas si es
-        necesario.
         """
         if not self.active:
             return

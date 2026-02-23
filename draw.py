@@ -30,9 +30,10 @@ class DrawMaze:
 
         self.win_w = self.width * self.tile_size
         self.win_h = self.height * self.tile_size
-        self.win_ptr = self.mlx.mlx_new_window(self.mlx_ptr, self.win_w,
-                                               self.win_h, "A-Maze-ing 42 "
-                                               "- Premium Visualizer")
+        self.win_ptr = self.mlx.mlx_new_window(
+                                            self.mlx_ptr, self.win_w,
+                                            self.win_h, "A-Maze-ing 42 "
+                                            "- Premium Visualizer")
 
         self.img = self.mlx.mlx_new_image(self.mlx_ptr, self.win_w, self.win_h)
         addr = self.mlx.mlx_get_data_addr(self.img)
@@ -152,8 +153,6 @@ class DrawMaze:
             for dx in range(self.tile_size):
                 self._put_pixel(px + dx, py + dy, color)
 
-    # Player drawing moved to player.py
-
     def change_wall_color(self) -> None:
         """Cambia los muros a un color aleatorio de la lista."""
         colors = [
@@ -176,18 +175,6 @@ class DrawMaze:
                 draw_player_buffer(self)
             self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr,
                                              self.img, 0, 0)
-            # También dibujar el texto encima aunque no haya actualización
-            text = "A-MAZE-ING"
-            char_w = 10
-            text_w = len(text) * char_w
-            text_x = max(0, (self.win_w - text_w) // 2)
-            text_y = 10
-            self.mlx.mlx_string_put(
-                self.mlx_ptr, self.win_ptr,
-                text_x, text_y,
-                0xFFFFFF,
-                text
-            )
             # Dibujar jugador en el buffer y como overlay para asegurar
             # visibilidad en caso de que `mlx_pixel_put` no funcione.
             if not self.game_over:
@@ -297,7 +284,7 @@ class DrawMaze:
             msg_y = self.win_h // 2
             self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
                                     msg_x, msg_y, 0xFFFFFF, msg)
-            # Mensaje secundario: permitir regenerar con R
+            # Mensaje secundario: permitir regenerar con R o salir
             hint = "Pulsa (R) Volver a jugar | (esc) Salir"
             hint_w = len(hint) * char_w
             hint_x = max(0, (self.win_w - hint_w) // 2)
