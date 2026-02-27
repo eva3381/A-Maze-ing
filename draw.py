@@ -224,6 +224,7 @@ class DrawMaze:
 
                 # --- RELLENO BLANCO PARA EL LOGO 42 ---
                 # Usamos el set 'pattern_cells' definido en el MazeGenerator
+
                 if (x, y) in self.maze_obj.pattern_cells:
                     # Rellenamos el cuadrado de la celda de color blanco
                     for ry in range(self.tile_size):
@@ -406,7 +407,7 @@ class DrawMaze:
                     pass
             else:
                 print("Hiding the solution")
-                self.anim_start_time = None          # la paramos / reseteamos
+                self.anim_start_time = None  # la paramos / reseteamos
             self.needs_update = True
 
         # --- R (Regenerar Laberinto PERFECTO) ---

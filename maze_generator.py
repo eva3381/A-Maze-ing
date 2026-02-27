@@ -29,7 +29,10 @@ class MazeGenerator:
         self._rng = random.Random(self.seed)
 
         # Usamos pattern_cells para compatibilidad con draw.py
-        self.pattern_cells = self._setup_logo_42()
+        if width > 10 and height > 10:
+            self.pattern_cells = self._setup_logo_42()
+        else:
+            self.pattern_cells = set()
 
     def _setup_logo_42(self) -> set:
         """Dibuja el logo '42' centrado, desplazándose si colisiona con la

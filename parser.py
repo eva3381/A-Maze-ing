@@ -72,16 +72,20 @@ class MazeConfig:
         return (int(parts[0].strip()), int(parts[1].strip()))
 
     def _validate_logic(self) -> None:
-        # 1. Límites básicos
-        if self.width < 10 or self.height < 10:
-            raise ConfigError(
-                "Maze is too small for a '42' pattern (min 10x10)."
-            )
+        try:
+            # 1. Límites básicos
+            if self.width < 10 or self.height < 10:
+                raise ConfigError(
+                    "Maze is too small for a '42' pattern (min 10x10)."
+                )
 
-        for label, (x, y) in [("ENTRY", self.entry), ("EXIT", self.exit)]:
-            if not (0 <= x < self.width and 0 <= y < self.height):
-                raise ConfigError(f"{label} ({x},{y}) is out of bounds.")
+            for label, (x, y) in [("ENTRY", self.entry), ("EXIT", self.exit)]:
+                if not (0 <= x < self.width and 0 <= y < self.height):
+                    raise ConfigError(f"{label} ({x},{y}) is out of bounds.")
 
-        # Entry and exit must be different
-        if self.entry == self.exit:
-            raise ConfigError("ENTRY and EXIT must be different.")
+            # Entry and exit must be different
+            if self.entry == self.exit:
+                raise ConfigError("ENTRY and EXIT must be different.")
+
+        except ConfigError as error:
+            print(f"{error}")
