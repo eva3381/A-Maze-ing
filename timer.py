@@ -16,7 +16,7 @@ def draw_timer_overlay(draw_maze: Any, elapsed_sec: int) -> None:
     char_w = 10
     char_h = 14
     tx = max(10, draw_maze.win_w - (len(timer_text) * char_w) - 10)
-    ty = 10
+    ty = draw_maze.win_h - char_h - 10
 
     # Limpiar rectángulo de fondo del temporizador en la ventana
     width_px = len(timer_text) * char_w

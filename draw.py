@@ -50,6 +50,8 @@ class DrawMaze:
         self.wall_color = 0xFF1493
         self.solu_color = 0x00FFFF
         self.bg_color = 0x000000
+        self.logo_color = 0xFFFFFF
+
         # Animador del cuadrito que recorre la solución
         self.animator = Animator()
         # Posición del jugador (siempre existe) y estado del juego
@@ -162,22 +164,46 @@ class DrawMaze:
             self.needs_update = True
 
     def _fill_tile(self, x, y, color):
+        """pintar por completo una celda del laberinto, rellenándola
+          píxel a píxel con un color sólido"""
         px, py = x * self.tile_size, y * self.tile_size
         for dy in range(self.tile_size):
             for dx in range(self.tile_size):
                 self._put_pixel(px + dx, py + dy, color)
 
-    def change_wall_color(self) -> None:
-        """Cambia los muros a un color aleatorio de la lista."""
-        colors = [
+    def change_wall_color(self, x=None, y=None, px=None, py=None):
+        """Cambia los muros a un color aleatorio y
+        también el color del logo 42."""
+        wall_colors = [
             0xFF8C00, 0x8A2BE2, 0xFF00FF, 0xFFD700, 0x1E90FF,
             0xFF69B4, 0x32CD32, 0x4B0082, 0x7FFF00, 0x0000FF
         ]
-        new_color = random.choice(colors)
-        # Evitar repetir el mismo color consecutivamente
-        while new_color == self.wall_color:
-            new_color = random.choice(colors)
-        self.wall_color = new_color
+
+        logo_colors = [
+            0xFFFFFF, 0xAAAAAA, 0x00FF7F, 0xFF4500, 0x00CED1,
+            0xADFF2F, 0xFF6347, 0x40E0D0
+        ]
+
+        # Elegir color de muro distinto al actual
+        new_wall = random.choice(wall_colors)
+        while new_wall == self.wall_color:
+            new_wall = random.choice(wall_colors)
+        self.wall_color = new_wall
+
+        # Elegir color del logo distinto al color del muro
+        new_logo = random.choice(logo_colors)
+        while new_logo == self.wall_color:
+            new_logo = random.choice(logo_colors)
+        self.logo_color = new_logo
+
+        # Repintar el logo 42 con el nuevo color
+        for (cx, cy) in self.maze_obj.pattern_cells:
+            px = cx * self.tile_size
+            py = cy * self.tile_size
+            for ry in range(self.tile_size):
+                for rx in range(self.tile_size):
+                    self._put_pixel(px + rx, py + ry, self.logo_color)
+
         self.needs_update = True
 
     def render(self, *args):
@@ -192,15 +218,20 @@ class DrawMaze:
                 draw_player_overlay(self)
             # Mostrar temporizador en esquina superior derecha.
             if self.play_start_time is not None and not self.game_over:
-                elapsed = int(time.time() - self.play_start_time)
-                draw_timer_overlay(self, elapsed)
+                if self.width > 5 and self.height > 5:
+                    elapsed = int(time.time() - self.play_start_time)
+                    draw_timer_overlay(self, elapsed)
                 # HUD: monedas y movimientos
-                hud = f"Coins: {self.coins_collected}  Moves: {self.moves_count}"
-                char_w = 10
-                tx = max(10, self.win_w - (len(hud) * char_w) - 10)
-                ty = 10 + 16
-                self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
-                                        tx, ty, 0xFFFFFF, hud)
+                if self.width > 8 and self.height > 8:
+                    hud = (
+                        f"Coins: {self.coins_collected}"
+                        f" Moves: {self.moves_count}")
+                    char_w = 10
+                    tx = max(10, self.win_w - (len(hud) * char_w) - 10)
+                    ty = 10
+                    self.mlx.mlx_string_put(
+                        self.mlx_ptr, self.win_ptr,
+                        tx, ty, 0xFFFFFF, hud)
             return 0
 
         # 1. LIMPIEZA DEL BUFFER (Fondo negro)
@@ -229,7 +260,7 @@ class DrawMaze:
                     # Rellenamos el cuadrado de la celda de color blanco
                     for ry in range(self.tile_size):
                         for rx in range(self.tile_size):
-                            self._put_pixel(px + rx, py + ry, 0xFFFFFF)
+                            self._put_pixel(px + rx, py + ry, self.logo_color)
 
                 # --- DIBUJO DE MUROS ---
                 # Se dibujan después del relleno para que queden por encima
@@ -296,12 +327,14 @@ class DrawMaze:
             draw_player_overlay(self)
             # Mostrar temporizador en esquina superior derecha
             if self.play_start_time is not None:
-                elapsed = int(time.time() - self.play_start_time)
-                draw_timer_overlay(self, elapsed)
+                if self.width > 5 and self.height > 5:
+                    elapsed = int(time.time() - self.play_start_time)
+                    draw_timer_overlay(self, elapsed)
 
         # Si el jugador llegó a la salida, marcar fin del juego y mostrar
         # pantalla final (negra + mensaje). El único modo de terminar es llegar
         # a la salida; no salimos con ESC.
+        # Si el jugador llegó a la salida
         if self.game_over:
             self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
             for i in range(len(self.img_data)):
@@ -309,40 +342,58 @@ class DrawMaze:
             self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
             self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr,
                                              self.img, 0, 0)
-            msg = "You have solved the A-Maze-Ing!"
+
+            # Selección del mensaje según tamaño del laberinto
+            if self.width <= 3 and self.height <= 3:
+                msg = ""
+            elif self.width <= 7 and self.height <= 7:
+                msg = "You win!"
+            elif self.width <= 14 and self.height <= 14:
+                msg = "You have solved!"
+            else:
+                msg = "You have solved the A-Maze-Ing!"
+
+            # Dibujar mensaje principal
             char_w = 10
             msg_w = len(msg) * char_w
             msg_x = max(0, (self.win_w - msg_w) // 2)
             msg_y = self.win_h // 2
             self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
                                     msg_x, msg_y, 0xFFFFFF, msg)
-            # Mensaje secundario: permitir regenerar con R o salir
-            hint = "Press (R) Play again | (Esc) Exit"
-            hint_w = len(hint) * char_w
-            hint_x = max(0, (self.win_w - hint_w) // 2)
-            hint_y = msg_y + 24
-            self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
-                                    hint_x, hint_y, 0xFFFFFF, hint)
-            # Mostrar tiempo final junto al mensaje
-            if self.play_start_time is not None:
-                end_t = self.end_time or time.time()
-                total = int(end_t - self.play_start_time)
-                mins = total // 60
-                secs = total % 60
-                final_text = f"Total time: {mins}:{secs:02d}"
-                final_w = len(final_text) * char_w
-                final_x = max(10, (self.win_w - final_w) // 2)
-                final_y = hint_y + 24
+
+            # Mostrar score SOLO si el laberinto es mayor a 14x14
+            if self.width > 14 and self.height > 14:
+                hint = "Press (R) Play again | (Esc) Exit"
+                hint_w = len(hint) * char_w
+                hint_x = max(20, (self.win_w - hint_w) // 2)
+                hint_y = msg_y + 24
                 self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
-                                        final_x, final_y, 0xFFFFFF,
-                                        final_text)
-                # Mostrar monedas recogidas y movimientos
-                stats = f"Coins: {self.coins_collected} Moves: {self.moves_count}"
-                stats_w = len(stats) * char_w
-                stats_x = max(10, (self.win_w - stats_w) // 2)
-                stats_y = final_y + 20
-                self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
-                                        stats_x, stats_y, 0xFFFFFF, stats)
+                                        hint_x, hint_y, 0xFFFFFF, hint)
+
+                # Tiempo final
+                if self.play_start_time is not None:
+                    end_t = self.end_time or time.time()
+                    total = int(end_t - self.play_start_time)
+                    mins = total // 60
+                    secs = total % 60
+                    final_text = f"Total time: {mins}:{secs:02d}"
+                    final_w = len(final_text) * char_w
+                    final_x = max(10, (self.win_w - final_w) // 2)
+                    final_y = hint_y + 24
+                    self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
+                                            final_x, final_y, 0xFFFFFF,
+                                            final_text)
+
+                    # Monedas y movimientos
+                    stats = (
+                            f"Coins: {self.coins_collected} "
+                            f"Moves: {self.moves_count}")
+                    stats_w = len(stats) * char_w
+                    stats_x = max(10, (self.win_w - stats_w) // 2)
+                    stats_y = final_y + 20
+                    self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
+                                            stats_x, stats_y, 0xFFFFFF, stats)
+
             self.needs_update = False
             return 0
 
@@ -351,21 +402,6 @@ class DrawMaze:
             self.needs_update = True
         else:
             self.needs_update = False
-
-        # --- TEXTO AMAZING ---
-        # Centrar el texto horizontalmente (aprox. por ancho de carácter)
-        text = "A-MAZE-ING"
-        # Ancho estimado por carácter en píxeles; ajustar si es necesario
-        char_w = 10
-        text_w = len(text) * char_w
-        text_x = max(0, (self.win_w - text_w) // 2)
-        text_y = 10
-        self.mlx.mlx_string_put(
-            self.mlx_ptr, self.win_ptr,
-            text_x, text_y,
-            0xFFFFFF,
-            text
-        )
         return 0
 
     def handle_keys(self, keycode, *args):
