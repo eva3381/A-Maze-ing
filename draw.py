@@ -147,7 +147,7 @@ class DrawMaze:
         elif self.width <= 14: 
             msg = "YOU HAVE SOLVED IT!"
         else: 
-            msg = "Congrats!!"
+            msg = "Well Done!!"
 
         # 3. Centrado manual mejorado (estimando 10px por letra en MLX)
         char_w = 8 
