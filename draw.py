@@ -32,7 +32,6 @@ class DrawMaze:
         if not self.mlx_ptr:
             os._exit(1)
 
-        # Calculamos el tamaño de la ventana asegurando un mínimo para que quepa el texto final
         self.win_w = max(self.width * self.tile_size, 320) 
         self.win_h = max(self.height * self.tile_size, 200)
         
@@ -135,30 +134,18 @@ class DrawMaze:
         self.needs_update = True
 
     def _render_final_screen(self):
-        # 1. Limpiar buffer y ventana
         for i in range(len(self.img_data)):
             self.img_data[i] = 0
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
         self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
 
-        # 2. Selección de mensaje robusta
-        if self.width <= 7: 
-            msg = "YOU WIN!"
-        elif self.width <= 14: 
-            msg = "YOU HAVE SOLVED IT!"
-        else: 
-            msg = "Well Done!!"
-
-        # 3. Centrado manual mejorado (estimando 10px por letra en MLX)
         char_w = 8 
-        msg_len = len(msg) * char_w
-        msg_x = (self.win_w - msg_len) // 2
+        msg = "YOU WIN!" if self.width <= 7 else "Well Done!!"
+        msg_x = (self.win_w - (len(msg) * char_w)) // 2
         msg_y = self.win_h // 3
         
-        # Dibujar mensaje principal
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, max(10, msg_x), msg_y, 0xFFFFFF, msg)
 
-        # 4. Estadísticas finales
         total = int((self.end_time or time.time()) - self.play_start_time)
         stats = f"Time: {total // 60}:{total % 60:02d} | Coins: {self.coins_collected}"
         stats_x = (self.win_w - (len(stats) * char_w)) // 2
@@ -167,7 +154,6 @@ class DrawMaze:
         hint = "Press (R) Restart | (ESC) Exit"
         hint_x = (self.win_w - (len(hint) * char_w)) // 2
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, max(10, hint_x), msg_y + 80, 0xAAAAAA, hint)
-        
         self.needs_update = False
 
     def render(self, *args):
@@ -183,7 +169,6 @@ class DrawMaze:
                 draw_timer_overlay(self, elapsed)
             return 0
 
-        # Dibujo normal del mapa
         for i in range(len(self.img_data)): self.img_data[i] = 0
         self._fill_tile(*self.maze_obj.entry, 0x00FF00)
         self._fill_tile(*self.maze_obj.exit_pt, 0xFF0000)
@@ -209,12 +194,13 @@ class DrawMaze:
         if self.animator and self.animator.active: self.animator.draw(self)
         draw_player_buffer(self)
         draw_player_overlay(self)
-
         self.needs_update = False
         return 0
 
     def handle_keys(self, keycode, *args):
-        if keycode in [53, 65307, 0xFF1B]: os._exit(0)
+        # ESC para salir
+        if keycode in [53, 65307, 0xFF1B]: 
+            self._close_window()
         if self.game_over:
             if keycode in [15, 114, 82]: self._reset_game()
             return 0
@@ -256,8 +242,22 @@ class DrawMaze:
                 self.end_time = time.time()
             self.needs_update = True
 
+    def _close_window(self, *args):
+        """Función de salida limpia."""
+        print("Cerrando el laberinto...")
+        os._exit(0)
+
     def run(self):
         self.play_start_time = time.time()
+        
+        # Hook para las teclas
         self.mlx.mlx_key_hook(self.win_ptr, self.handle_keys, None)
+        
+        # --- LOS DOS HOOKS DE CIERRE ---
+        # 17 es DestroyNotify (clic en la X)
+        self.mlx.mlx_hook(self.win_ptr, 17, 0, self._close_window, None)
+        # 33 es el que usa el código de tu amigo (ClientMessage / WM_DELETE_WINDOW)
+        self.mlx.mlx_hook(self.win_ptr, 33, 0, self._close_window, None)
+        
         self.mlx.mlx_loop_hook(self.mlx_ptr, self.render, None)
         self.mlx.mlx_loop(self.mlx_ptr)
