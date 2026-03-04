@@ -125,21 +125,28 @@ class DrawMaze:
         self.needs_update = True
 
     def _render_final_screen(self):
+        """Pantalla final corregida para que el texto no se corte."""
         for i in range(len(self.img_data)): self.img_data[i] = 0
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
         self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
         mid_x, mid_y = self.win_w // 2, self.win_h // 2
         
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 31, mid_y - 40 + 1, 0x000000, "YOU WON!")
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 30, mid_y - 40, 0xFFFF00, "YOU WON!")
+        # Ajustamos el offset a -45 (antes era -30) para que quepa "YOU WON!" entero
+        # Sombra
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 46, mid_y - 40 + 1, 0x000000, "")
+        # Texto principal
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 45, mid_y - 40, 0xFFFF00, "")
         
+        # Estadísticas
         stats = f"Moves: {self.moves_count} | Coins: {self.coins_collected}"
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 85, mid_y, 0x00FFFF, stats)
         
+        # Tiempo transcurrido
         total_time = int(self.end_time - self.play_start_time)
         time_str = f"Time: {total_time}s"
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 35, mid_y + 25, 0x00FF00, time_str)
         
+        # Instrucciones
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 110, mid_y + 65, 0xAAAAAA, "Press R to Restart | ESC to Exit")
 
     def render(self, *args):
