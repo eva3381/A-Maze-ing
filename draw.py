@@ -133,36 +133,46 @@ class DrawMaze:
         self.needs_update = True
 
     def _render_final_screen(self):
-        
+        """Pantalla final: Muestra estadísticas siempre y adapta las
+        instrucciones."""
+        # 1. Limpiar pantalla
         for i in range(len(self.img_data)):
             self.img_data[i] = 0
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
-        self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr,
-                                         self.img, 0, 0)
+        self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img,
+                                         0, 0)
+
         mid_x, mid_y = self.win_w // 2, self.win_h // 2
 
-        # Sombra y Texto "YOU WON!"
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 46,
-                                mid_y - 40 + 1, 0x000000, "YOU WON!")
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 45,
-                                mid_y - 40, 0xFFFF00, "YOU WON!")
+        # --- PANEL DE VICTORIA (Aparece en todos los tamaños) ---
 
-        # Estadísticas
+        # Centrar el mensaje
+        wow_text = "WOW!"
+        wow_offset = (len(wow_text) * 10) // 2
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
+                                mid_x - wow_offset - 1, mid_y - 40 + 1,
+                                0x000000, wow_text)
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - wow_offset,
+                                mid_y - 40, 0xFFFF00, wow_text)
+
+        # Estadísticas: Pasos y Monedas
         stats = f"Moves: {self.moves_count} | Coins: {self.coins_collected}"
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 85, mid_y, 0x00FFFF, stats)
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 85, mid_y,
+                                0x00FFFF, stats)
 
         # Tiempo transcurrido
         total_time = int(self.end_time - self.play_start_time)
         time_str = f"Time: {total_time}s"
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 35, mid_y + 25, 0x00FF00, time_str)
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 35,
+                                mid_y + 25, 0x00FF00, time_str)
 
-        # --- Instrucciones Dinámicas ---
+        # --- INSTRUCCIONES DINÁMICAS (Lo único que depende del tamaño) ---
         if self.width < 20 or self.height < 20:
             instr_text = "R | ESC"
-            offset_x = 25  # Ajuste para centrar el texto corto
+            offset_x = 25
         else:
             instr_text = "Press R to Restart | ESC to Exit"
-            offset_x = 110  # Ajuste original para el texto largo
+            offset_x = 110
 
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - offset_x,
                                 mid_y + 65, 0xAAAAAA, instr_text)
