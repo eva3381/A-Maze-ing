@@ -31,9 +31,9 @@ class DrawMaze:
         if not self.mlx_ptr:
             os._exit(1)
 
-        self.win_w = max(self.width * self.tile_size, 320) 
+        self.win_w = max(self.width * self.tile_size, 320)
         self.win_h = max(self.height * self.tile_size, 200)
-        
+
         self.win_ptr = self.mlx.mlx_new_window(
             self.mlx_ptr, self.win_w, self.win_h, "A-Maze-Ing 42")
 
@@ -53,8 +53,8 @@ class DrawMaze:
         self.game_over = False
         self.coins = set()
         self.coins_collected = 0
-        self.moves_count = 0 
-        
+        self.moves_count = 0
+
         place_coins(self)
 
     def exit_program(self, *args):
@@ -100,12 +100,18 @@ class DrawMaze:
         half = self.tile_size // 2
         for i in range(steps_to_draw):
             move = self.solution[i]
-            sx, sy = (curr_x * self.tile_size + half, curr_y * self.tile_size + half)
-            if move == 'N': curr_y -= 1
-            elif move == 'S': curr_y += 1
-            elif move == 'E': curr_x += 1
-            elif move == 'W': curr_x -= 1
-            ex, ey = (curr_x * self.tile_size + half, curr_y * self.tile_size + half)
+            sx, sy = (curr_x * self.tile_size + half, curr_y * self.tile_size
+                      + half)
+            if move == 'N':
+                curr_y -= 1
+            elif move == 'S':
+                curr_y += 1
+            elif move == 'E':
+                curr_x += 1
+            elif move == 'W':
+                curr_x -= 1
+            ex, ey = (curr_x * self.tile_size + half, curr_y *
+                      self.tile_size + half)
             self._draw_line(sx, sy, ex, ey, self.solu_color, 2)
         if t < 1.0:
             self.needs_update = True
@@ -118,24 +124,28 @@ class DrawMaze:
 
     def change_wall_color(self):
         print("Changing wall color...")
-        wall_colors = [0xFF8C00, 0x8A2BE2, 0xFF00FF, 0xFFD700, 0x1E90FF, 0xFF69B4, 0x32CD32, 0x4B0082, 0x7FFF00, 0x0000FF]
-        logo_colors = [0xFFFFFF, 0xAAAAAA, 0x00FF7F, 0xFF4500, 0x00CED1, 0xADFF2F, 0xFF6347, 0x40E0D0]
+        wall_colors = [0xFF8C00, 0x8A2BE2, 0xFF00FF, 0xFFD700, 0x1E90FF,
+                       0xFF69B4, 0x32CD32, 0x4B0082, 0x7FFF00, 0x0000FF]
+        logo_colors = [0xFFFFFF, 0xAAAAAA, 0x00FF7F, 0xFF4500, 0x00CED1,
+                       0xADFF2F, 0xFF6347, 0x40E0D0]
         self.wall_color = random.choice(wall_colors)
         self.logo_color = random.choice(logo_colors)
         self.needs_update = True
 
     def _render_final_screen(self):
-        """Pantalla final corregida para que el texto no se corte."""
-        for i in range(len(self.img_data)): self.img_data[i] = 0
+        
+        for i in range(len(self.img_data)):
+            self.img_data[i] = 0
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
-        self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
+        self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr,
+                                         self.img, 0, 0)
         mid_x, mid_y = self.win_w // 2, self.win_h // 2
 
-        # Ajustamos el offset a -45 (antes era -30) para que quepa "YOU WON!" entero
-        # Sombra
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 46, mid_y - 40 + 1, 0x000000, "")
-        # Texto principal
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 45, mid_y - 40, 0xFFFF00, "")
+        # Sombra y Texto "YOU WON!"
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 46,
+                                mid_y - 40 + 1, 0x000000, "YOU WON!")
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 45,
+                                mid_y - 40, 0xFFFF00, "YOU WON!")
 
         # Estadísticas
         stats = f"Moves: {self.moves_count} | Coins: {self.coins_collected}"
@@ -145,9 +155,17 @@ class DrawMaze:
         total_time = int(self.end_time - self.play_start_time)
         time_str = f"Time: {total_time}s"
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 35, mid_y + 25, 0x00FF00, time_str)
-        
-        # Instrucciones
-        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 110, mid_y + 65, 0xAAAAAA, "Press R to Restart | ESC to Exit")
+
+        # --- Instrucciones Dinámicas ---
+        if self.width < 20 or self.height < 20:
+            instr_text = "R | ESC"
+            offset_x = 25  # Ajuste para centrar el texto corto
+        else:
+            instr_text = "Press R to Restart | ESC to Exit"
+            offset_x = 110  # Ajuste original para el texto largo
+
+        self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - offset_x,
+                                mid_y + 65, 0xAAAAAA, instr_text)
 
     def render(self, *args):
         if self.game_over:
@@ -156,11 +174,13 @@ class DrawMaze:
         if self.show_solution and self.anim_start_time:
             self.needs_update = True
         if not self.needs_update:
-            self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
+            self.mlx.mlx_put_image_to_window(self.mlx_ptr,
+                                             self.win_ptr, self.img, 0, 0)
             draw_player_overlay(self)
             return 0
 
-        for i in range(len(self.img_data)): self.img_data[i] = 0
+        for i in range(len(self.img_data)):
+            self.img_data[i] = 0
         for y in range(self.height):
             for x in range(self.width):
                 if (x, y) in self.maze_obj.pattern_cells:
@@ -169,21 +189,34 @@ class DrawMaze:
         self._fill_tile(*self.maze_obj.entry, 0x00FF00)
         self._fill_tile(*self.maze_obj.exit_pt, 0xFF0000)
 
-        if self.show_solution: self.draw_path()
+        if self.show_solution:
+            self.draw_path()
 
         for y in range(self.height):
             for x in range(self.width):
                 px, py = x * self.tile_size, y * self.tile_size
                 val = self.grid[y][x]
-                if val & 1: self._draw_line(px, py, px + self.tile_size, py, self.wall_color, self.wall_thickness)
-                if val & 2: self._draw_line(px + self.tile_size, py, px + self.tile_size, py + self.tile_size, self.wall_color, self.wall_thickness)
-                if val & 4: self._draw_line(px, py + self.tile_size, px + self.tile_size, py + self.tile_size, self.wall_color, self.wall_thickness)
-                if val & 8: self._draw_line(px, py, px, py + self.tile_size, self.wall_color, self.wall_thickness)
+                if val & 1:
+                    self._draw_line(px, py, px + self.tile_size, py,
+                                    self.wall_color, self.wall_thickness)
+                if val & 2:
+                    self._draw_line(px + self.tile_size, py, px +
+                                    self.tile_size, py + self.tile_size,
+                                    self.wall_color, self.wall_thickness)
+                if val & 4:
+                    self._draw_line(px, py + self.tile_size, px +
+                                    self.tile_size, py + self.tile_size,
+                                    self.wall_color, self.wall_thickness)
+                if val & 8:
+                    self._draw_line(px, py, px, py + self.tile_size,
+                                    self.wall_color, self.wall_thickness)
 
-        if getattr(self, 'coins', None): draw_coins(self)
-        draw_player_buffer(self) 
+        if getattr(self, 'coins', None):
+            draw_coins(self)
+        draw_player_buffer(self)
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
-        self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
+        self.mlx.mlx_put_image_to_window(self.mlx_ptr,
+                                         self.win_ptr, self.img, 0, 0)
         draw_player_overlay(self)
         if self.play_start_time:
             draw_timer_overlay(self, int(time.time() - self.play_start_time))
@@ -192,21 +225,26 @@ class DrawMaze:
 
     def handle_keys(self, keycode, *args):
         # ESC para cerrar
-        if keycode in [53, 65307, 0xFF1B]: self.exit_program()
+        if keycode in [53, 65307, 0xFF1B]:
+            self.exit_program()
         if keycode in [114, 15, 82]:
             print("Regenerating a new random maze...")
-            self.maze_obj.regenerate() 
+            self.maze_obj.regenerate()
             self.maze_obj.generate()
             self.grid = self.maze_obj.grid
             self.solution = self.maze_obj.solve()
-            self._reset_game() 
+            self._reset_game()
             return 0
 
-        if keycode in [119, 87, 65362, 126]: self._try_move_player(0, -1)
-        elif keycode in [115, 83, 65364, 125]: self._try_move_player(0, 1)
-        elif keycode in [97, 65, 65361, 123]: self._try_move_player(-1, 0)
-        elif keycode in [100, 68, 65363, 124]: self._try_move_player(1, 0)
-        elif keycode in [112, 80]: 
+        if keycode in [119, 87, 65362, 126]:
+            self._try_move_player(0, -1)
+        elif keycode in [115, 83, 65364, 125]:
+            self._try_move_player(0, 1)
+        elif keycode in [97, 65, 65361, 123]:
+            self._try_move_player(-1, 0)
+        elif keycode in [100, 68, 65363, 124]:
+            self._try_move_player(1, 0)
+        elif keycode in [112, 80]:
             self.show_solution = not self.show_solution
             if self.show_solution:
                 print("Solution calculated and visible")
@@ -215,17 +253,18 @@ class DrawMaze:
                 print("Solution hidden")
                 self.anim_start_time = None
             self.needs_update = True
-        elif keycode in [8, 99, 67]: 
+        elif keycode in [8, 99, 67]:
             self.change_wall_color()
         return 0
 
     def _try_move_player(self, dx, dy):
         px, py = self.player_pos
-        bit = {(0,-1):1, (1,0):2, (0,1):4, (-1,0):8}.get((dx, dy))
+        bit = {(0, -1): 1, (1, 0): 2, (0, 1): 4, (-1, 0): 8}.get((dx, dy))
         if not (self.grid[py][px] & bit):
             self.player_pos = (px + dx, py + dy)
             self.moves_count += 1
-            if collect_coin(self, self.player_pos): self.coins_collected += 1
+            if collect_coin(self, self.player_pos):
+                self.coins_collected += 1
             if self.player_pos == self.maze_obj.exit_pt:
                 print("🏆 Goal reached! Maze completed.")
                 self.end_time = time.time()
@@ -239,7 +278,7 @@ class DrawMaze:
         self.moves_count = 0
         self.play_start_time = time.time()
         self.anim_start_time = None
-        self.show_solution = False # Ocultar solución al reiniciar
+        self.show_solution = False
         place_coins(self)
         self.needs_update = True
 
