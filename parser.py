@@ -1,9 +1,10 @@
-import sys
-from typing import Dict, Tuple, Set
+from typing import Dict, Tuple
+
 
 class ConfigError(Exception):
     """Excepción personalizada para errores de configuración."""
     pass
+
 
 class MazeConfig:
     def __init__(self, file_name: str):
@@ -26,8 +27,10 @@ class MazeConfig:
             with open(self.file_name, 'r') as file:
                 for line in file:
                     line = line.strip()
-                    if not line or line.startswith("#"): continue
-                    if "=" not in line: continue
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" not in line:
+                        continue
                     key, value = line.split("=", 1)
                     config[key.strip().upper()] = value.strip()
             return config
@@ -42,11 +45,12 @@ class MazeConfig:
             self.output_file = config.get("OUTPUT_FILE", "maze.txt")
             self.seed = int(config.get("SEED", 0))
             self.algorithm = config.get("ALGORITHM", "DFS")
-            
+
             self.entry = self._parse_coords(config.get("ENTRY", "0,0"))
             self.exit = self._parse_coords(config.get("EXIT", "0,0"))
         except ValueError:
-            raise ConfigError("One of the numeric values ​​in config.txt is invalid.")
+            raise ConfigError(
+                "One of the numeric values  in config.txt is invalid.")
 
         # VALIDACIÓN DE RANGOS
         self._validate_boundaries()
@@ -65,12 +69,13 @@ class MazeConfig:
         if self.width < 3 or self.height < 3:
             raise ConfigError(
                 f"Maze dimensions are too small ({self.width}x{self.height}). "
-                "Minimum size required is 3x3 to ensure a valid path can be" \
+                "Minimum size required is 3x3 to ensure a valid path can be"
                 "generated."
             )
 
         # Validar Entrada
-        if not (0 <= self.entry[0] < self.width) or not (0 <= self.entry[1] < self.height):
+        if not (0 <= self.entry[0] < self.width) or not (0 <= self.entry[1] <
+                                                         self.height):
             raise ConfigError(
                 f"The ENTRY ({self.entry[0]},{self.entry[1]}) It's out of"
                 f"bounds.\n"

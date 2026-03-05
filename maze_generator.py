@@ -2,6 +2,7 @@ import random
 from typing import Tuple, Optional
 from collections import deque
 
+
 class MazeGenerator:
     """
     Generador de laberintos con soporte para logo '42' central.
