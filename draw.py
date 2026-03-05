@@ -123,9 +123,12 @@ class DrawMaze:
                 self._put_pixel(px + dx, py + dy, color)
 
     def change_wall_color(self):
+        """Cambia los colores de las paredes y el logo a colores aleatorios."""
         print("Changing wall color...")
+        # Paleta de colores disponibles para las paredes
         wall_colors = [0xFF8C00, 0x8A2BE2, 0xFF00FF, 0xFFD700, 0x1E90FF,
                        0xFF69B4, 0x32CD32, 0x4B0082, 0x7FFF00, 0x0000FF]
+        # Paleta de colores disponibles para el logo
         logo_colors = [0xFFFFFF, 0xAAAAAA, 0x00FF7F, 0xFF4500, 0x00CED1,
                        0xADFF2F, 0xFF6347, 0x40E0D0]
         self.wall_color = random.choice(wall_colors)
@@ -133,8 +136,8 @@ class DrawMaze:
         self.needs_update = True
 
     def _render_final_screen(self):
-        """Pantalla final: Muestra estadísticas siempre y adapta las
-        instrucciones."""
+        """ Renderiza la pantalla final con estadísticas del juego
+          completado."""
         # 1. Limpiar pantalla
         for i in range(len(self.img_data)):
             self.img_data[i] = 0
@@ -230,6 +233,13 @@ class DrawMaze:
         draw_player_overlay(self)
         if self.play_start_time:
             draw_timer_overlay(self, int(time.time() - self.play_start_time))
+        # Mostrar estadísticas (movimientos y monedas)
+        #  en la esquina superior derecha (no se actualizan continuamente)
+        stats_text = f"Moves: {
+            self.moves_count} | Coins: {self.coins_collected}"
+        stats_x = max(10, self.win_w - 240)
+        self.mlx.mlx_string_put(
+            self.mlx_ptr, self.win_ptr, stats_x, 20, 0xFFFFFF, stats_text)
         self.needs_update = False
         return 0
 
@@ -293,9 +303,15 @@ class DrawMaze:
         self.needs_update = True
 
     def run(self):
+        """Inicia el bucle principal del juego y
+          configura los hooks de eventos."""
         self.play_start_time = time.time()
+        # Configurar hook para eventos de teclado
         self.mlx.mlx_key_hook(self.win_ptr, self.handle_keys, None)
-        # EL TRUCO PARA LA X: Evento 33 con máscara 0 (ClientMessage)
+        # Configurar hook para el botón X de cerrar ventana (Evento 33
+        #  con máscara 0 = ClientMessage)
         self.mlx.mlx_hook(self.win_ptr, 33, 0, self.exit_program, None)
+        # Configurar hook para renderizar en cada frame
         self.mlx.mlx_loop_hook(self.mlx_ptr, self.render, None)
+        # Iniciar el bucle principal
         self.mlx.mlx_loop(self.mlx_ptr)

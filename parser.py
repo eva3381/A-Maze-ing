@@ -59,7 +59,7 @@ class MazeConfig:
         try:
             parts = text.split(",")
             return (int(parts[0].strip()), int(parts[1].strip()))
-        except:
+        except ConfigError:
             raise ConfigError("Invalid coordinate format. Must be 'x,y'.")
 
     def _validate_boundaries(self) -> None:
