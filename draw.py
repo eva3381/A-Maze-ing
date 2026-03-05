@@ -130,17 +130,17 @@ class DrawMaze:
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
         self.mlx.mlx_put_image_to_window(self.mlx_ptr, self.win_ptr, self.img, 0, 0)
         mid_x, mid_y = self.win_w // 2, self.win_h // 2
-        
+
         # Ajustamos el offset a -45 (antes era -30) para que quepa "YOU WON!" entero
         # Sombra
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 46, mid_y - 40 + 1, 0x000000, "")
         # Texto principal
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 45, mid_y - 40, 0xFFFF00, "")
-        
+
         # Estadísticas
         stats = f"Moves: {self.moves_count} | Coins: {self.coins_collected}"
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - 85, mid_y, 0x00FFFF, stats)
-        
+
         # Tiempo transcurrido
         total_time = int(self.end_time - self.play_start_time)
         time_str = f"Time: {total_time}s"
@@ -193,9 +193,15 @@ class DrawMaze:
     def handle_keys(self, keycode, *args):
         # ESC para cerrar
         if keycode in [53, 65307, 0xFF1B]: self.exit_program()
-        if self.game_over:
-            if keycode in [15, 114, 82]: self._reset_game()
+        if keycode in [114, 15, 82]:
+            print("Regenerating a new random maze...")
+            self.maze_obj.regenerate() 
+            self.maze_obj.generate()
+            self.grid = self.maze_obj.grid
+            self.solution = self.maze_obj.solve()
+            self._reset_game() 
             return 0
+
         if keycode in [119, 87, 65362, 126]: self._try_move_player(0, -1)
         elif keycode in [115, 83, 65364, 125]: self._try_move_player(0, 1)
         elif keycode in [97, 65, 65361, 123]: self._try_move_player(-1, 0)
@@ -227,13 +233,13 @@ class DrawMaze:
             self.needs_update = True
 
     def _reset_game(self):
-        print("Regenerating maze...")
         self.player_pos = self.maze_obj.entry
         self.game_over = False
         self.coins_collected = 0
         self.moves_count = 0
         self.play_start_time = time.time()
         self.anim_start_time = None
+        self.show_solution = False # Ocultar solución al reiniciar
         place_coins(self)
         self.needs_update = True
 

@@ -99,6 +99,18 @@ class MazeGenerator:
         if not self.perfect:
             self.add_paths()
 
+    def regenerate(self):
+        """Reinicia el estado del generador con una nueva semilla aleatoria."""
+        self.seed = random.randint(0, 1000000)
+        self._rng = random.Random(self.seed)
+        # Limpiar el grid a su estado inicial (todas las paredes levantadas)
+        self.grid = [[15 for _ in range(self.width)] for _ in range(self.height)]
+        # Re-inicializar el logo si corresponde
+        if self.width > 15 and self.height > 15:
+            self.pattern_cells = self._setup_logo_42()
+        else:
+            self.pattern_cells = set()
+
     def add_paths(self) -> None:
         muros_a_romper = (self.width * self.height) // 10
         for _ in range(muros_a_romper):
