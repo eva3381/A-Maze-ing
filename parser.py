@@ -59,19 +59,28 @@ class MazeConfig:
             raise ConfigError("Invalid coordinate format. Must be 'x,y'.")
 
     def _validate_boundaries(self) -> None:
-        """Verifica que ENTRY y EXIT estén dentro del laberinto."""
+        """Verifica dimensiones mínimas y que ENTRY y EXIT estén dentro del
+        laberinto."""
+        # Validación de tamaño mínimo
+        if self.width < 3 or self.height < 3:
+            raise ConfigError(
+                f"Maze dimensions are too small ({self.width}x{self.height}). "
+                "Minimum size required is 3x3 to ensure a valid path can be" \
+                "generated."
+            )
+
         # Validar Entrada
         if not (0 <= self.entry[0] < self.width) or not (0 <= self.entry[1] < self.height):
             raise ConfigError(
-                f"The ENTRY ({self.entry[0]},{self.entry[1]}) It's out of bounds.\n"
-                f"For a labyrinth of {self.width}x{self.height}, the allowed range is from 0.0 to {self.width-1},{self.height-1}.\n"
-                f"Please adjust the parameters in config.txt."
+                f"The ENTRY ({self.entry[0]},{self.entry[1]}) It's out of"
+                f"bounds.\n"
+                f"For a labyrinth of {self.width}x{self.height}, the allowed"
+                f"range is from 0 to {self.width-1}."
             )
-        
+
         # Validar Salida
-        if not (0 <= self.exit[0] < self.width) or not (0 <= self.exit[1] < self.height):
+        if not (0 <= self.exit[0] < self.width) or not (0 <= self.exit[1]
+                                                        < self.height):
             raise ConfigError(
-                f"The EXIT ({self.exit[0]},{self.exit[1]}) It's out of bounds.\n"
-                f"For a labyrinth of {self.width}x{self.height}, the allowed range is from 0.0 to {self.width-1},{self.height-1}.\n"
-                f"Please adjust the parameters in config.txt."
+                f"The EXIT ({self.exit[0]},{self.exit[1]}) It's out of bounds."
             )
