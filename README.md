@@ -1,4 +1,4 @@
-_Este proyecto ha sido creado como parte del currículo de 42 por <your_login>._
+_Este proyecto ha sido creado como parte del currículo de 42 por <gortiz-j><evaflete>._
 
 **Descripción**
 - **Proyecto**: Generador y visualizador de laberintos (A-Maze-ing).
@@ -83,5 +83,5 @@ python3 a_maze_ing.py config.txt
 - MiniLibX: documentación incluida en `mlx/`.
 
 **Uso de IA**
-- testing y tareas repetitivas y monotonas como escribir y redactar este readme.md
+- testing y tareas repetitivas y monotonas
 

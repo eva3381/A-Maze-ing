@@ -135,10 +135,15 @@ class DrawMaze:
         self.logo_color = random.choice(logo_colors)
         self.needs_update = True
 
+    # ...existing code...
     def _render_final_screen(self):
         """ Renderiza la pantalla final con estadísticas del juego
           completado."""
-        # 1. Limpiar pantalla
+        # Si ya fue renderizada, no repintar (evita parpadeos/recortes)
+        if getattr(self, 'final_screen_rendered', False):
+            return
+
+        # 1. Limpiar pantalla (buffer de la imagen)
         for i in range(len(self.img_data)):
             self.img_data[i] = 0
         self.mlx.mlx_clear_window(self.mlx_ptr, self.win_ptr)
@@ -179,6 +184,20 @@ class DrawMaze:
 
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr, mid_x - offset_x,
                                 mid_y + 65, 0xAAAAAA, instr_text)
+
+        # Forzar sincronización con el servidor gráfico si la MLX lo ofrece,
+        # ayuda a evitar que operaciones pendientes cambien el resultado.
+        sync = getattr(self.mlx, 'mlx_do_sync', None)
+        if callable(sync):
+            try:
+                sync(self.mlx_ptr)
+            except Exception:
+                pass
+
+        # Marcar como render final realizado para evitar sobreescrituras
+        self.final_screen_rendered = True
+        self.needs_update = False
+        # ...existing code...
 
     def render(self, *args):
         if self.game_over:
@@ -235,8 +254,9 @@ class DrawMaze:
             draw_timer_overlay(self, int(time.time() - self.play_start_time))
         # Mostrar estadísticas (movimientos y monedas)
         #  en la esquina superior derecha (no se actualizan continuamente)
-        stats_text = f"Moves: {
-            self.moves_count} | Coins: {self.coins_collected}"
+        stats_text = (
+            f"Moves: {self.moves_count} | Coins: {self.coins_collected}"
+        )
         stats_x = max(10, self.win_w - 240)
         self.mlx.mlx_string_put(
             self.mlx_ptr, self.win_ptr, stats_x, 20, 0xFFFFFF, stats_text)
@@ -255,7 +275,8 @@ class DrawMaze:
             self.solution = self.maze_obj.solve()
             self._reset_game()
             return 0
-
+        if self.game_over:
+            return 0
         if keycode in [119, 87, 65362, 126]:
             self._try_move_player(0, -1)
         elif keycode in [115, 83, 65364, 125]:
@@ -301,6 +322,7 @@ class DrawMaze:
         self.show_solution = False
         place_coins(self)
         self.needs_update = True
+        self.final_screen_rendered = False
 
     def run(self):
         """Inicia el bucle principal del juego y
