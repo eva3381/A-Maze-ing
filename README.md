@@ -58,7 +58,7 @@ _Este proyecto ha sido creado como parte del currículo de 42 por <gortiz-j><eva
 - `maze.txt`: salida de ejemplo generada por el programa.
 
 **Makefile**
-- Incluir targets habituales: `install`, `run`, `debug`, `clean`, `fclean`, `re`, `lint`.
+-habituales: `make`, `clean`, `fclean`, `re`.
 
 **Ejemplo rápido**
 - Contenido mínimo `config.txt`:
