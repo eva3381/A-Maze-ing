@@ -1,25 +1,27 @@
-MazeGenerator
-Description
+# MazeGenerator
+
+## Description
 
 MazeGenerator is a reusable class for generating and solving mazes.
-The generator creates a grid-based maze using a Depth-First Search (DFS) algorithm and stores the maze internally as a bit-masked integer matrix.
 
-If the maze size is large enough, the generator embeds a "42" logo pattern in the center of the maze. The pattern is carved directly into the maze and connected to the generated paths.
+The generator creates a grid-based maze using a **Depth-First Search (DFS)** algorithm and stores the maze internally as a **bit-masked integer matrix**.
+
+If the maze size is large enough, the generator embeds a **"42" logo pattern in the center of the maze**. The pattern is carved directly into the maze and connected to the generated paths.
 
 The class can also:
 
-Generate perfect mazes (single unique solution)
+- Generate **perfect mazes** (single unique solution)
+- Generate **imperfect mazes** (extra paths added)
+- Solve the maze using **Breadth-First Search (BFS)**
+- Export the maze, entry/exit and solution to a file
 
-Generate imperfect mazes (extra paths added)
+---
 
-Solve the maze using Breadth-First Search (BFS)
-
-Export the maze, entry/exit and solution to a file.
-
-Installation
+# Installation
 
 If the class is distributed as a package:
 
+```bash
 pip install poneraqui.tar
 
 Or place maze_generator.py inside your project and import it directly.
@@ -37,14 +39,14 @@ maze = MazeGenerator(
     perfect=True,
     seed=42
 )
-Generate the maze
+Generate maze
 maze.generate()
 
-This creates the maze grid using Depth-First Search with backtracking.
+This generates the maze using Depth-First Search with backtracking.
 
 If the maze is larger than 15×15, a "42" logo pattern will automatically be placed in the center.
 
-Solve the maze
+Solve maze
 solution = maze.solve()
 print(solution)
 
@@ -63,7 +65,7 @@ EESSSWNN
 Save maze to file
 maze.save()
 
-The output file will contain:
+The output file contains:
 
 The maze grid encoded in hexadecimal
 
@@ -73,7 +75,7 @@ The exit coordinates
 
 The solution path
 
-Example file structure:
+Example structure:
 
 F7BD...
 8A3C...
@@ -82,18 +84,17 @@ F7BD...
 0,0
 19,19
 EESSWN...
-Regenerate the maze
+Regenerate maze
 
 To reset the generator and create a new maze with a new random seed:
 
 maze.regenerate()
 maze.generate()
-
-This clears the grid and initializes the generator again.
-
 Maze Generation Algorithm
 
-The maze is generated using Depth-First Search (DFS) with a stack:
+The maze is generated using Depth-First Search (DFS) with backtracking.
+
+Steps:
 
 Start from the entry cell
 
@@ -101,21 +102,19 @@ Randomly choose an unvisited neighbor
 
 Remove the wall between the two cells
 
-Push the new cell to the stack
+Move to the neighbor and continue
 
-Backtrack when no neighbors are available
+Backtrack when no unvisited neighbors remain
 
 This produces a perfect maze where every cell is reachable and there is exactly one path between two points.
 
-If perfect=False, additional random walls are removed using add_paths() to create multiple solutions.
+If perfect=False, additional walls are removed using add_paths() to create multiple possible solutions.
 
 Data Structure
 
-The maze is stored in:
+The maze is stored in self.grid as a 2D matrix of integers.
 
-self.grid
-
-A 2D matrix of integers where each integer is a bit mask representing the walls of a cell.
+Each integer represents the walls of a cell using a bit mask.
 
 Bit	Direction	Binary
 1	North	0001
@@ -128,16 +127,16 @@ Example:
 15 (1111) → all walls present
 14 (1110) → north wall removed
 
-Walls are removed using bitwise operations.
+Walls are modified using bitwise operations.
 
 Parameters
 Parameter	Type	Default	Description
 width	int	—	Width of the maze grid
 height	int	—	Height of the maze grid
-entry	tuple[int,int]	—	Starting coordinate (x,y)
-exit_pt	tuple[int,int]	—	Exit coordinate (x,y)
+entry	tuple[int,int]	—	Starting coordinate (x, y)
+exit_pt	tuple[int,int]	—	Exit coordinate (x, y)
 output_file	str	—	File where the maze and solution will be saved
-perfect	bool	True	If True, maze has a single solution
+perfect	bool	True	If True, the maze has a single solution
 seed	Optional[int]	None	Random seed to reproduce the same maze
 Special Feature: "42" Pattern
 
@@ -145,9 +144,9 @@ If the maze size is larger than 15×15, the generator automatically embeds a "42
 
 The pattern:
 
-Is carved as predefined cells
+Is defined as a set of fixed cells
 
-Maintains wall consistency with neighbors
+Maintains wall consistency with neighboring cells
 
 Is connected to the rest of the maze by at least one path
 
