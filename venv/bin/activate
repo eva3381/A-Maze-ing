@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV=/home/evaflete/Desktop/A-Maze-Ing03/AMI/A-Maze-ing-David/mi_git/venv
+VIRTUAL_ENV=/home/evaflete/Desktop/prueba4/A-Maze-ing/venv
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

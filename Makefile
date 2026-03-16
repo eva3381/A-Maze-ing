@@ -22,6 +22,7 @@ $(VENV)/bin/activate: $(REQUIREMENTS)
 	@python3 -m venv $(VENV)
 	@echo "Status: Updating pip and installing dependencies..."
 	@$(PIP) install --upgrade pip
+	@$(PIP) install build
 	@$(PIP) install -r $(REQUIREMENTS)
 	@touch $(VENV)/bin/activate
 
