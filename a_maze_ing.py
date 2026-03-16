@@ -22,7 +22,15 @@ def main():
             seed=cfg.seed
         )
 
-        maze.generate()
+        # Comprobar resultado de generación
+        ok = maze.generate()
+        if not ok:
+            # Convertir el fallo de generación en ConfigError para que el
+            # bloque except ConfigError existente lo maneje
+            raise ConfigError(
+                "Maze generation aborted: entry or exit point"
+                " is inside the logo '42'.")
+
         solution_path = maze.solve()
         maze.save()
 
