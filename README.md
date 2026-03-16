@@ -1,4 +1,4 @@
-_Este proyecto ha sido creado como parte del currículo de 42 por <gortiz-j><evaflete>._
+_Este proyecto ha sido creado como parte del currículo de 42 por gortiz-j y evaflete._
 
 **Descripción**
 - **Proyecto**: Generador y visualizador de laberintos (A-Maze-ing).
