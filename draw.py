@@ -155,7 +155,7 @@ class DrawMaze:
         # --- PANEL DE VICTORIA (Aparece en todos los tamaños) ---
 
         # Centrar el mensaje
-        wow_text = "WOW!"
+        wow_text = "WOW"
         wow_offset = (len(wow_text) * 10) // 2
         self.mlx.mlx_string_put(self.mlx_ptr, self.win_ptr,
                                 mid_x - wow_offset - 1, mid_y - 40 + 1,
