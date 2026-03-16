@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mazegenerator"
+version = "1.0.0"
+description = "Reusable maze generation engine with BFS solver"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+	{ name = "Guillermo Muñoz Diaz" },
+	{ name = "Sara Vaquerizo" }
+]
+
+[tool.setuptools]
+py-modules = ["mazegenerator"]
