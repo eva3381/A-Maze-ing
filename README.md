@@ -34,10 +34,6 @@ _Este proyecto ha sido creado como parte del currículo de 42 por gortiz-j y eva
             mismos parámetros producirá el mismo laberinto, de forma análoga a las
             semillas de mundos en juegos como Minecraft.
 
-            Nota de mejora: para aislar completamente la generación frente a otras
-            partes del programa que puedan usar `random`, es preferible crear un
-            RNG por instancia: `self.rng = random.Random(self.seed)` y usar
-            `self.rng.choice(...)` en lugar de `random.choice(...)`.
 **Uso**
 - **Ejecutar**: `python3 a_maze_ing.py config.txt`
 - **Archivo de configuración**: `config.txt` (claves: `WIDTH`, `HEIGHT`, `ENTRY`, `EXIT`, `OUTPUT_FILE`, `PERFECT`, `SEED`, `ALGORITHM`).

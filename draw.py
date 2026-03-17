@@ -270,10 +270,19 @@ class DrawMaze:
         if keycode in [114, 15, 82]:
             print("Regenerating a new random maze...")
             self.maze_obj.regenerate()
-            self.maze_obj.generate()
-            self.grid = self.maze_obj.grid
-            self.solution = self.maze_obj.solve()
-            self._reset_game()
+            ok = self.maze_obj.generate()
+            if ok:
+                # Guardar el nuevo laberinto
+                # (sobrescribe self.maze_obj.output_file)
+                try:
+                    self.maze_obj.save()
+                except Exception as e:
+                    print(f"Warning: could not save maze file: {e}")
+                self.grid = self.maze_obj.grid
+                self.solution = self.maze_obj.solve()
+                self._reset_game()
+            else:
+                print("Maze regeneration failed; file not overwritten.")
             return 0
         if self.game_over:
             return 0
