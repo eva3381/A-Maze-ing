@@ -1,4 +1,4 @@
-#!/home/evaflete/Desktop/prueba4/A-Maze-ing/venv/bin/python3
+#!/home/evaflete/Desktop/prueba5/A-Maze-ing/venv/bin/python3
 import sys
 from build.__main__ import entrypoint
 if __name__ == '__main__':
