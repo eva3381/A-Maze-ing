@@ -9,8 +9,8 @@ description = "Reusable maze generation engine with BFS solver"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-	{ name = "Guillermo Muñoz Diaz" },
-	{ name = "Sara Vaquerizo" }
+	{ name = "Gabriel David Ortiz" },
+	{ name = "Eva Flete" }
 ]
 
 [tool.setuptools]
