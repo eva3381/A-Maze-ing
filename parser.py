@@ -38,19 +38,33 @@ class MazeConfig:
             raise ConfigError(f"The file could not be found: {self.file_name}")
 
     def _process_and_validate(self, config: Dict[str, str]) -> None:
+        # 1. COMPROBACIÓN DE CAMPOS OBLIGATORIOS
+        required_fields = ["WIDTH", "HEIGHT", "ENTRY", "EXIT"]
+        missing = [field for field in required_fields if field not in config]
+
+        if missing:
+            fields_str = ", ".join(missing)
+            raise ConfigError(
+                f"Missing required fields: {fields_str}. "
+                f"Please ensure these are defined in {self.file_name}."
+            )
+
         try:
-            self.width = int(config.get("WIDTH", 0))
-            self.height = int(config.get("HEIGHT", 0))
+            # Ahora podemos estar seguros de que existen en el diccionario
+            self.width = int(config["WIDTH"])
+            self.height = int(config["HEIGHT"])
+            self.entry = self._parse_coords(config["ENTRY"])
+            self.exit = self._parse_coords(config["EXIT"])
+
+            # Campos opcionales (mantienen valores por defecto)
             self.is_perfect = (config.get("PERFECT", "True") == "True")
             self.output_file = config.get("OUTPUT_FILE", "maze.txt")
             self.seed = int(config.get("SEED", 0))
             self.algorithm = config.get("ALGORITHM", "DFS")
 
-            self.entry = self._parse_coords(config.get("ENTRY", "0,0"))
-            self.exit = self._parse_coords(config.get("EXIT", "0,0"))
         except ValueError:
             raise ConfigError(
-                "One of the numeric values  in config.txt is invalid.")
+                "One of the numeric values in config.txt is invalid.")
 
         # VALIDACIÓN DE RANGOS
         self._validate_boundaries()
@@ -87,5 +101,8 @@ class MazeConfig:
         if not (0 <= self.exit[0] < self.width) or not (0 <= self.exit[1]
                                                         < self.height):
             raise ConfigError(
-                f"The EXIT ({self.exit[0]},{self.exit[1]}) It's out of bounds."
+                f"The EXIT ({self.exit[0]},{self.exit[1]}) It's out of"
+                f"bounds.\n"
+                f"For a labyrinth of {self.width}x{self.height}, the allowed"
+                f"range is from 0 to {self.width-1}."
             )
