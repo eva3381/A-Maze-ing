@@ -332,7 +332,7 @@ class DrawMaze:
         place_coins(self)
         self.needs_update = True
         self.final_screen_rendered = False
-    
+
     def _print_controls_menu(self):
         """Prints the game controls in the terminal in English."""
         print("\n" + "="*50)

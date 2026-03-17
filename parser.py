@@ -39,8 +39,8 @@ class MazeConfig:
 
     def _process_and_validate(self, config: Dict[str, str]) -> None:
         # 1. COMPROBACIÓN DE CAMPOS OBLIGATORIOS
-        # Verificamos si falta alguno de los 4 pilares
-        required_fields = ["WIDTH", "HEIGHT", "ENTRY", "EXIT"]
+        # Verificamos si falta alguno de los 5 pilares
+        required_fields = ["WIDTH", "HEIGHT", "ENTRY", "EXIT", "PERFECT"]
         missing = [field for field in required_fields if field not in config]
 
         if missing:
@@ -82,16 +82,31 @@ class MazeConfig:
 
     def _parse_coords(self, text: str) -> Tuple[int, int]:
         try:
-            parts = text.split(",")
-            return (int(parts[0].strip()), int(parts[1].strip()))
+            parts = [p.strip() for p in text.split(",")]
+            # Deben ser exactamente 2 elementos, ni más ni menos
+            if len(parts) != 2:
+                raise ConfigError(
+                    "Invalid coordinate format. Must be exactly two "
+                    "integers separated by a single comma: 'x,y'."
+                )
+            if parts[0] == "" or parts[1] == "":
+                raise ConfigError(
+                    "Invalid coordinate format. Both coordinates"
+                    " must be present and non-empty: 'x,y'."
+                )
+            return (int(parts[0]), int(parts[1]))
+        except ValueError:
+            raise ConfigError("Invalid coordinate format. Coordinates"
+                              " must be integers: 'x,y'.")
+        except ConfigError:
+            raise ConfigError("Invalid coordinate format. Must be 'x,y'.")
         except Exception:
-            # Respetamos tu mensaje original
             raise ConfigError("Invalid coordinate format. Must be 'x,y'.")
 
     def _validate_boundaries(self) -> None:
         """Verifica dimensiones mínimas y que ENTRY y EXIT estén dentro del
         laberinto."""
-        # Validación de tamaño mínimo (respetando tu mensaje)
+        # Validación de tamaño mínimo
         if self.width < 3 or self.height < 3:
             raise ConfigError(
                 f"Maze dimensions are too small ({self.width}x{self.height}). "
@@ -99,7 +114,7 @@ class MazeConfig:
                 "generated."
             )
 
-        # Validar Entrada (respetando tu print y formato)
+        # Validar Entrada
         if not (0 <= self.entry[0] < self.width) or not (0 <= self.entry[1] <
                                                          self.height):
             raise ConfigError(
@@ -109,7 +124,7 @@ class MazeConfig:
                 f"range is from 0 to {self.width-1}."
             )
 
-        # Validar Salida (respetando tu print y formato)
+        # Validar Salida
         if not (0 <= self.exit[0] < self.width) or not (0 <= self.exit[1]
                                                         < self.height):
             raise ConfigError(

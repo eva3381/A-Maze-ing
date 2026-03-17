@@ -57,9 +57,5 @@ class Animator:
         idx = self._current_index()
         x, y = self.path[idx]
 
-        # El animator NO dibuja un cuadrito que compita con el jugador. Su
-        # responsabilidad es controlar el progreso temporal de la animación
-        # (por ejemplo para dibujar la traza de la solución en otro sitio).
-        # Aquí simplemente actualizamos `active` cuando termina.
         if idx >= len(self.path) - 1:
             self.active = False
