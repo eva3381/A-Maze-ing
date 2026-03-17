@@ -332,10 +332,27 @@ class DrawMaze:
         place_coins(self)
         self.needs_update = True
         self.final_screen_rendered = False
+    
+    def _print_controls_menu(self):
+        """Prints the game controls in the terminal in English."""
+        print("\n" + "="*50)
+        print("          MAZE GAME CONTROLS")
+        print("="*50)
+        print("  W / UP arrow    : Move Player UP")
+        print("  A / LEFT arrow  : Move Player LEFT")
+        print("  S / DOWN arrow  : Move Player DOWN")
+        print("  D / RIGHT arrow : Move Player RIGHT")
+        print("-" * 50)
+        print("  P (Path)        : Show/Hide solution path")
+        print("  R (Reset)       : Restart the current maze")
+        print("  ESC             : Exit game")
+        print("=" * 50 + "\n")
 
     def run(self):
         """Inicia el bucle principal del juego y
           configura los hooks de eventos."""
+        self._print_controls_menu()
+        # imprimimos el menú por la terminal
         self.play_start_time = time.time()
         # Configurar hook para eventos de teclado
         self.mlx.mlx_key_hook(self.win_ptr, self.handle_keys, None)
